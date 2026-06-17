@@ -1189,28 +1189,109 @@ function isLikelyCorsOrNetwork(err) {
          m.includes('network request failed');
 }
 
+function sleep(ms) { return new Promise(res => setTimeout(res, ms)); }
+
+// Fetch JSON with automatic retry on 429 (rate limit) and 5xx (server error).
+// Honors Retry-After header if present, otherwise exponential backoff.
+// Throws an Error with `.status` set on non-retryable HTTP failures.
+async function fetchJson(url, options = {}, retries = 1) {
+  let lastErr;
+  for (let i = 0; i <= retries; i++) {
+    const r = await fetch(url, options);
+    if (r.ok) return await r.json();
+    if ((r.status === 429 || r.status >= 500) && i < retries) {
+      const retryAfter = parseInt(r.headers.get('Retry-After'), 10);
+      const waitMs = isFinite(retryAfter) && retryAfter > 0
+        ? Math.min(retryAfter * 1000, 10000)
+        : 1200 * Math.pow(2, i);
+      await sleep(waitMs);
+      continue;
+    }
+    const err = new Error(`HTTP ${r.status}`);
+    err.status = r.status;
+    lastErr = err;
+    break;
+  }
+  throw lastErr;
+}
+
 async function lookupOpenLibrary(isbn) {
-  const baseParams = `bibkeys=ISBN:${encodeURIComponent(isbn)}&jscmd=data`;
+  const isbnEnc = encodeURIComponent(isbn);
+  const bibkeysJsonUrl  = `https://openlibrary.org/api/books?bibkeys=ISBN:${isbnEnc}&jscmd=data&format=json`;
+  const bibkeysJsonpUrl = `https://openlibrary.org/api/books?bibkeys=ISBN:${isbnEnc}&jscmd=data&format=javascript`;
+  const editionUrl      = `https://openlibrary.org/isbn/${isbnEnc}.json`;
+
+  // 1) Try the bibkeys endpoint (rich data). Retries once on 429/5xx.
   let json = null;
-  // Try fetch first — gives us proper HTTP status codes when it works.
   try {
-    const r = await fetch(`https://openlibrary.org/api/books?${baseParams}&format=json`, {
-      headers: { 'Accept': 'application/json' },
-    });
-    if (!r.ok) throw new Error(`Open Library HTTP ${r.status}`);
-    json = await r.json();
+    json = await fetchJson(bibkeysJsonUrl, { headers: { 'Accept': 'application/json' } });
   } catch (fetchErr) {
     if (isLikelyCorsOrNetwork(fetchErr)) {
-      // CORS/network — try JSONP (loads via <script>, bypasses CORS).
-      // Open Library serves JSONP when format=javascript&callback=...
-      json = await jsonpRequest(`https://openlibrary.org/api/books?${baseParams}&format=javascript`);
-    } else {
-      throw fetchErr;
+      // Browser blocked the fetch (CORS / file://) — JSONP bypasses
+      try { json = await jsonpRequest(bibkeysJsonpUrl); } catch (_) { /* fall through */ }
     }
+    // For HTTP errors, fall through to the /isbn endpoint below
   }
   const key = `ISBN:${isbn}`;
-  if (!json || !json[key]) return null;
-  return normalizeOpenLibrary(json[key], isbn);
+  if (json && json[key] && json[key].title) {
+    return normalizeOpenLibrary(json[key], isbn);
+  }
+
+  // 2) Fallback: /isbn/{isbn}.json. Sparser data (authors are references) but
+  //    much more reliable when bibkeys is having a bad day.
+  let edition;
+  try {
+    edition = await fetchJson(editionUrl);
+  } catch (e) {
+    if (e.status === 404) return null;     // genuinely not in Open Library
+    throw e;                                // other HTTP errors bubble up
+  }
+  return await normalizeOpenLibraryEdition(edition, isbn);
+}
+
+// Normalize the /isbn/{isbn}.json edition record into our internal shape.
+// Authors come back as references like {key: '/authors/OL...'}; resolve in
+// parallel for the first few. Best-effort — leaves blank if resolution fails.
+async function normalizeOpenLibraryEdition(edition, isbn) {
+  if (!edition || !edition.title) return null;
+
+  let title = String(edition.title).trim();
+  if (edition.subtitle) title += `: ${String(edition.subtitle).trim()}`;
+
+  let authors = [];
+  if (Array.isArray(edition.authors) && edition.authors.length) {
+    try {
+      const names = await Promise.all(
+        edition.authors.slice(0, 4).map(async a => {
+          if (!a || !a.key) return null;
+          try {
+            const ar = await fetch(`https://openlibrary.org${a.key}.json`);
+            if (!ar.ok) return null;
+            const aj = await ar.json();
+            return normalizeAuthorName(aj.name || '');
+          } catch (_) { return null; }
+        })
+      );
+      authors = names.filter(Boolean);
+    } catch (_) { /* best-effort only */ }
+  }
+
+  const publishers = (edition.publishers || []).filter(Boolean).map(p => String(p).trim());
+  const pubYear = extractYear(edition.publish_date);
+  const pages = edition.number_of_pages || null;
+  const subjects = (edition.subjects || []).slice(0, 8).map(s => String(s).trim()).filter(Boolean);
+
+  let language = 'eng';
+  if (edition.languages && edition.languages[0] && edition.languages[0].key) {
+    const m = edition.languages[0].key.match(/\/languages\/(\w+)/);
+    if (m) language = m[1];
+  }
+
+  return {
+    title, authors, publishers, pubYear, pages,
+    illustrations: null, dimensions: null,
+    language, dewey: null, subjects, summary: '',
+  };
 }
 
 function normalizeOpenLibrary(d, isbn) {
@@ -1275,9 +1356,7 @@ function normalizeOpenLibrary(d, isbn) {
 
 async function lookupGoogleBooks(isbn) {
   const url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${encodeURIComponent(isbn)}`;
-  const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
-  if (!r.ok) throw new Error(`Google Books HTTP ${r.status}`);
-  const json = await r.json();
+  const json = await fetchJson(url, { headers: { 'Accept': 'application/json' } });
   if (!json.items || !json.items.length) return null;
   return normalizeGoogleBooks(json.items[0], isbn);
 }
@@ -1338,8 +1417,8 @@ async function lookupIsbn(isbn) {
     errors.push({ src: 'Google Books', err: e });
     console.warn('Google Books error:', e);
   }
-  // If every attempt died with a network/CORS error, report it as such — not
-  // as "no record found." The book might exist; we just couldn't reach the APIs.
+
+  // Network/CORS errors — couldn't reach either service
   const allNetwork = errors.length > 0 && errors.every(({ err }) =>
     isLikelyCorsOrNetwork(err) ||
     /JSONP/i.test(String(err && err.message || ''))
@@ -1347,6 +1426,19 @@ async function lookupIsbn(isbn) {
   if (allNetwork) {
     return { error: 'network', message: 'Could not reach lookup services (network or CORS)' };
   }
+
+  // API errors — services answered but with 429 / 5xx (transient, not "not found")
+  const apiHttpErrors = errors.filter(({ err }) => err && err.status && (err.status === 429 || err.status >= 500));
+  if (errors.length > 0 && apiHttpErrors.length === errors.length) {
+    const rateLimited = apiHttpErrors.some(({ err }) => err.status === 429);
+    return {
+      error: 'api_unavailable',
+      message: rateLimited
+        ? 'Lookup API rate-limited — try again in a few minutes'
+        : 'Lookup APIs temporarily unavailable — try again shortly',
+    };
+  }
+
   return { error: 'not_found' };
 }
 
@@ -1384,6 +1476,10 @@ async function startLookup(rowId) {
   } else if (res.error === 'network') {
     row.status = STATUS.FAILED;
     row.errorMsg = res.message || 'Could not reach lookup services';
+    row.source = null;
+  } else if (res.error === 'api_unavailable') {
+    row.status = STATUS.FAILED;
+    row.errorMsg = res.message || 'Lookup APIs temporarily unavailable';
     row.source = null;
   } else if (res.error === 'not_found') {
     row.status = STATUS.FAILED;
