@@ -493,6 +493,53 @@
     .work-area { grid-template-columns: 1fr; }
   }
 
+  /* === Ingest-view layout ====================================
+     When viewing an ingestion job, constrain the view to the
+     viewport so the table scrolls internally while the group
+     header, sidebar, scan row, and complete-bar stay in place. */
+  #view-root[data-view="ingest"] {
+    height: calc(100vh - 160px);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    padding-top: 22px;
+    padding-bottom: 22px;
+  }
+  @media (max-width: 700px) {
+    #view-root[data-view="ingest"] { height: calc(100vh - 124px); }
+  }
+  #view-root[data-view="ingest"] .ingest-head { flex-shrink: 0; }
+  #view-root[data-view="ingest"] .work-area {
+    flex: 1; min-height: 0; overflow: hidden;
+  }
+  #view-root[data-view="ingest"] .work-main {
+    display: flex; flex-direction: column;
+    min-height: 0; min-width: 0; overflow: hidden;
+  }
+  #view-root[data-view="ingest"] .table-wrap {
+    flex: 1;
+    display: flex; flex-direction: column;
+    min-height: 0; overflow: hidden;
+  }
+  #view-root[data-view="ingest"] .table-scroll {
+    flex: 1; min-height: 0;
+    overflow-y: auto; overflow-x: hidden;
+  }
+  /* Pin the column headers to the top of the scroll viewport */
+  #view-root[data-view="ingest"] .table-scroll table.rows thead th {
+    position: sticky; top: 0; z-index: 2;
+  }
+  #view-root[data-view="ingest"] .scan-row { flex-shrink: 0; }
+  #view-root[data-view="ingest"] .complete-bar { flex-shrink: 0; }
+  #view-root[data-view="ingest"] aside.sidebar {
+    min-height: 0; max-height: 100%;
+    overflow-y: auto; overflow-x: hidden;
+  }
+
+  /* When not constrained (no JS or other view) we still want
+     the .table-scroll wrapper to not break layout */
+  .table-scroll { display: contents; }
+  #view-root[data-view="ingest"] .table-scroll { display: block; }
+
   .table-wrap {
     background: var(--surface);
     border: 1px solid var(--rule);
@@ -1355,7 +1402,12 @@ function normalizeOpenLibrary(d, isbn) {
 }
 
 async function lookupGoogleBooks(isbn) {
-  const url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${encodeURIComponent(isbn)}`;
+  let url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${encodeURIComponent(isbn)}`;
+  // Optional Google Books API key — dramatically raises the per-IP rate limit.
+  // Stored in localStorage via the Settings modal. Sent only to Google Books.
+  let apiKey = null;
+  try { apiKey = localStorage.getItem('googleBooksApiKey'); } catch (_) {}
+  if (apiKey) url += `&key=${encodeURIComponent(apiKey)}`;
   const json = await fetchJson(url, { headers: { 'Accept': 'application/json' } });
   if (!json.items || !json.items.length) return null;
   return normalizeGoogleBooks(json.items[0], isbn);
@@ -1973,6 +2025,7 @@ function setView(view) {
 
 function render() {
   const root = $('#view-root');
+  root.setAttribute('data-view', state.view);
   $('#brand-sub').textContent = (state.view === 'home') ? '' :
     (state.currentGroup ? `· ${state.currentGroup.name}` : '');
   updateNetIndicator();
@@ -2061,6 +2114,7 @@ function renderHome() {
         <span class="mono" style="font-size:11px;letter-spacing:.06em;">001</span>
         Start new ingestion
       </button>
+      <button class="btn" data-action="open-settings">Settings</button>
     </div>
     ${inProgress.length ? `
       <div class="home-section-header">
@@ -2192,23 +2246,25 @@ function renderIngest() {
     </div>
 
     <div class="work-area">
-      <div>
+      <div class="work-main">
         <div class="table-wrap">
-          <table class="rows">
-            <thead>
-              <tr>
-                <th class="col-num">#</th>
-                <th class="col-isbn">ISBN <span class="tag">020 $a</span></th>
-                <th class="col-bc">Barcode <span class="tag">001 · 852 $p</span></th>
-                <th class="col-title">Title / Author <span class="tag">245 · 100</span></th>
-                <th class="col-status">Status</th>
-                <th class="col-actions"></th>
-              </tr>
-            </thead>
-            <tbody id="rows-body">
-              ${tableRows}
-            </tbody>
-          </table>
+          <div class="table-scroll">
+            <table class="rows">
+              <thead>
+                <tr>
+                  <th class="col-num">#</th>
+                  <th class="col-isbn">ISBN <span class="tag">020 $a</span></th>
+                  <th class="col-bc">Barcode <span class="tag">001 · 852 $p</span></th>
+                  <th class="col-title">Title / Author <span class="tag">245 · 100</span></th>
+                  <th class="col-status">Status</th>
+                  <th class="col-actions"></th>
+                </tr>
+              </thead>
+              <tbody id="rows-body">
+                ${tableRows}
+              </tbody>
+            </table>
+          </div>
           <div class="scan-row">
             <span class="lbl">scan →</span>
             <input id="scan-isbn"    type="text" placeholder="ISBN" autocomplete="off" inputmode="numeric" />
@@ -2458,6 +2514,8 @@ document.addEventListener('click', (e) => {
       break;
     }
     case 'cycle-theme': cycleTheme(); break;
+    case 'open-settings':   openSettingsModal(); break;
+    case 'save-settings':   handleSaveSettings(); break;
   }
 });
 
@@ -2984,6 +3042,76 @@ async function handleConfirmDeleteGroup(groupId) {
     console.error(e);
     toast('Could not delete: ' + e.message, 'bad');
   }
+}
+
+/* ============================================================
+   SETTINGS MODAL
+   ============================================================ */
+function openSettingsModal() {
+  let existingKey = '';
+  try { existingKey = localStorage.getItem('googleBooksApiKey') || ''; } catch (_) {}
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  backdrop.id = 'modal-backdrop';
+  backdrop.innerHTML = `
+    <div class="modal" role="dialog" aria-modal="true" style="max-width:620px;">
+      <div class="modal-head">
+        <h2>Settings</h2>
+        <button class="btn-icon" data-action="modal-close" aria-label="Close">${iconClose()}</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label for="settings-gbkey">Google Books API key (optional)</label>
+          <input id="settings-gbkey" type="text" value="${escapeHtml(existingKey)}"
+                 placeholder="AIzaSy..."
+                 style="font-family:var(--font-mono);font-size:12px;letter-spacing:.02em;" />
+          <div class="hint" style="margin-top:10px;line-height:1.55;">
+            Without a key, Google rate-limits unauthenticated lookups aggressively
+            (often after only a handful of rapid requests per IP). With a free key,
+            the quota rises to <strong>1,000 lookups per day</strong>.
+            <br><br>
+            <strong>To get a key:</strong>
+            <ol style="margin:8px 0 8px 20px;padding:0;">
+              <li>Go to <a href="https://console.cloud.google.com" target="_blank" rel="noopener">console.cloud.google.com</a> and sign in.</li>
+              <li>Create a new project (any name) or pick an existing one.</li>
+              <li>In the search bar at top, type <em>Books API</em>, open it, and click <strong>Enable</strong>.</li>
+              <li>Open the left menu → <strong>APIs &amp; Services</strong> → <strong>Credentials</strong>.</li>
+              <li>Click <strong>+ Create Credentials</strong> → <strong>API key</strong>.</li>
+              <li>(Recommended) Click <strong>Edit API key</strong> → under <em>Application restrictions</em> set <strong>HTTP referrers</strong>, then add <code>libraryscience.ai/*</code> and <code>*.libraryscience.ai/*</code>.</li>
+              <li>Copy the key and paste it above.</li>
+            </ol>
+            The key lives only in your browser's local storage and is sent only to <code>googleapis.com</code>.
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <div></div>
+        <div class="right">
+          <button class="btn" data-action="modal-close">Cancel</button>
+          <button class="btn btn-primary" data-action="save-settings">Save</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(backdrop);
+  backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeModal(); });
+  document.addEventListener('keydown', escCloseHandler);
+  setTimeout(() => document.getElementById('settings-gbkey')?.focus(), 0);
+}
+
+function handleSaveSettings() {
+  const input = document.getElementById('settings-gbkey');
+  const raw = (input?.value || '').trim();
+  try {
+    if (raw) localStorage.setItem('googleBooksApiKey', raw);
+    else     localStorage.removeItem('googleBooksApiKey');
+  } catch (e) {
+    toast('Could not save settings: ' + e.message, 'bad');
+    return;
+  }
+  closeModal();
+  toast(raw ? 'API key saved' : 'API key cleared', 'ok', 1800);
 }
 
 /* ============================================================
