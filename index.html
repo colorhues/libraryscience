@@ -1,0 +1,2986 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Bibliographic Ingest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+  /* ============================================================
+     Design tokens — Crayon Box Warm Paper (light) and Twilight Ink (dark).
+     Sky vars (--sky-*) are updated by JS from time-of-day.
+     ============================================================ */
+  :root {
+    /* Crayon Box brand hues — same in both themes, used in the sky and accents */
+    --crayon-yellow: #F4C842;
+    --crayon-pink:   #F08FB6;
+    --crayon-blue:   #7AAFE8;
+    --crayon-green:  #5DB07F;
+
+    /* Typography */
+    --font-display: 'Manrope', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-body:    'Geist',   ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono:    'Geist Mono', ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, "Courier New", monospace;
+    --mono: var(--font-mono);   /* alias (existing CSS uses --mono) */
+    --body: var(--font-body);   /* alias */
+
+    /* Geometry / shadows */
+    --radius:       6px;
+    --radius-sm:    4px;
+    --shadow-1:     0 1px 0 rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.04);
+    --shadow-2:     0 4px 12px rgba(0,0,0,.06), 0 1px 3px rgba(0,0,0,.08);
+    --shadow-3:     0 16px 40px rgba(0,0,0,.12), 0 2px 8px rgba(0,0,0,.08);
+
+    /* === Light: Warm Paper === */
+    --paper:        #ECE6DA;  /* Paper */
+    --paper-2:      #F3EEE3;  /* Paper 2 */
+    --surface:      #FBF7EE;  /* Panel */
+    --surface-2:    #FFFFFF;  /* Panel 2 */
+    --ink:          #1C1B18;  /* Ink */
+    --ink-2:        #4A4741;  /* Ink Soft */
+    --ink-3:        #8A857B;  /* Ink Mute */
+    --ink-4:        #B4AE9F;
+    --rule:         #E4DCCC;  /* Line Soft */
+    --rule-2:       #D7CFBF;  /* Line */
+    --rule-3:       #C7BEAA;
+
+    --accent:       #1F3A52;  /* Accent (deep navy) */
+    --accent-hover: #2A4B6B;
+    --accent-soft:  #DDE3EB;
+
+    /* Status — harmonized with warm paper */
+    --ok:           #4A8A5C;
+    --ok-soft:      #DFEBD6;
+    --warn:         #9C6A1A;
+    --warn-soft:    #F2E6CB;
+    --bad:          #B8522E;  /* Accent Warm */
+    --bad-soft:     #F0DBCB;
+    --bad-deep:     #8A3D22;
+    --info:         #1F3A52;
+    --info-soft:    #DDE3EB;
+
+    /* Row-state tints (very subtle) */
+    --row-failed-bg:  #F7E8DE;
+    --row-pending-bg: #F6EED8;
+    --row-active-bg:  #FFFCF0;
+    --row-flash-bg:   #DBEBD3;
+
+    /* Chip borders */
+    --ok-border:    #BCD3B0;
+    --warn-border:  #E0D0A4;
+    --bad-border:   #E0BBA4;
+    --info-border:  #B8C4D2;
+
+    /* Toast */
+    --toast-bg:     #1C1B18;
+    --toast-fg:     #ECE6DA;
+
+    /* Sky (defaults are sensible noon values; JS overwrites on init) */
+    --sky-top:      #7AAFE8;
+    --sky-mid:      #B5D0E5;
+    --sky-horizon:  #ECE6DA;
+    --sky-text:     #1C1B18;
+    --sky-text-2:   #4A4741;
+    --sky-chip-bg:     rgba(0,0,0,0.05);
+    --sky-chip-border: rgba(0,0,0,0.16);
+    --star-opacity: 0;
+  }
+
+  /* === Dark: Twilight Ink === */
+  [data-theme="dark"] {
+    --paper:        #16181C;
+    --paper-2:      #1A1D22;
+    --surface:      #1E2128;
+    --surface-2:    #232730;
+    --ink:          #ECE6DA;
+    --ink-2:        #B8B3A8;
+    --ink-3:        #6E6A60;
+    --ink-4:        #4F4D45;
+    --rule:         #2C2F37;
+    --rule-2:       #353944;
+    --rule-3:       #424752;
+
+    --accent:       #E4B473;  /* Twilight accent — warm gold */
+    --accent-hover: #EAC18A;
+    --accent-soft:  #2A2820;
+
+    --ok:           #7DC598;
+    --ok-soft:      #1F2A22;
+    --warn:         #E4B473;
+    --warn-soft:    #2A2418;
+    --bad:          #D17A55;
+    --bad-soft:     #2D1F18;
+    --bad-deep:     #E4926E;
+    --info:         #7AAFE8;
+    --info-soft:    #1C2330;
+
+    --row-failed-bg:  #251A15;
+    --row-pending-bg: #25201A;
+    --row-active-bg:  #1A1D24;
+    --row-flash-bg:   #1A2820;
+
+    --ok-border:    #2A4032;
+    --warn-border:  #3F3520;
+    --bad-border:   #3F2820;
+    --info-border:  #1F2E40;
+
+    --toast-bg:     #ECE6DA;
+    --toast-fg:     #1C1B18;
+
+    --shadow-1:     0 1px 0 rgba(0,0,0,.30), 0 1px 2px rgba(0,0,0,.40);
+    --shadow-2:     0 4px 12px rgba(0,0,0,.50), 0 1px 3px rgba(0,0,0,.60);
+    --shadow-3:     0 16px 40px rgba(0,0,0,.60), 0 2px 8px rgba(0,0,0,.70);
+  }
+
+  *,*::before,*::after { box-sizing: border-box; }
+  html, body { margin:0; padding:0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    min-height: 100vh;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  input, select, textarea { font: inherit; color: inherit; }
+  input:focus, select:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  ::selection { background: var(--accent-soft); }
+
+  /* ============================================================
+     Layout
+     ============================================================ */
+  .app { min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* ============================================================
+     Sky header — replaces topbar. Real-time gradient driven by JS.
+     ============================================================ */
+  header.sky {
+    position: sticky; top: 0; z-index: 10;
+    height: 160px;
+    background: linear-gradient(
+      to bottom,
+      var(--sky-top) 0%,
+      var(--sky-mid) 55%,
+      var(--sky-horizon) 100%
+    );
+    overflow: hidden;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    border-bottom: 1px solid var(--rule);
+  }
+  @media (max-width: 700px) { header.sky { height: 124px; } }
+
+  .sky-canvas {
+    position: absolute; inset: 0;
+    pointer-events: none;
+  }
+
+  /* Stars (5–7 quiet dots, fade in at dusk) */
+  .sky-stars {
+    position: absolute; inset: 0;
+    opacity: var(--star-opacity, 0);
+    transition: opacity 3s ease;
+    pointer-events: none;
+  }
+  .sky-stars .star {
+    position: absolute;
+    width: 2px; height: 2px;
+    background: #ECE6DA;
+    border-radius: 50%;
+    box-shadow: 0 0 3px rgba(236,230,218,.7);
+    animation: starTwinkle 5s ease-in-out infinite;
+  }
+  @keyframes starTwinkle {
+    0%, 100% { opacity: 0.35; }
+    50%      { opacity: 1; }
+  }
+
+  /* Bottom content row — sits over the horizon */
+  .sky-bar {
+    position: relative; z-index: 1;
+    max-width: 1400px; width: 100%;
+    margin: 0 auto;
+    padding: 10px 20px 14px;
+    display: flex; align-items: center; gap: 14px;
+    color: var(--sky-text);
+  }
+
+  .brand {
+    display: flex; align-items: baseline; gap: 10px;
+    text-decoration: none; color: var(--sky-text);
+  }
+  .brand .mark {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: .14em;
+    color: var(--sky-text);
+    padding: 2px 7px;
+    border: 1px solid var(--sky-chip-border);
+    background: var(--sky-chip-bg);
+    border-radius: 3px;
+    opacity: .92;
+  }
+  .brand .name {
+    font-family: var(--font-display);
+    font-weight: 600; font-size: 16px; letter-spacing: -.012em;
+  }
+  .brand .sub {
+    font-family: var(--font-body);
+    font-size: 12px; color: var(--sky-text-2);
+  }
+
+  .sky-spacer { flex: 1; }
+
+  .sky-time {
+    display: flex; flex-direction: column; align-items: flex-end;
+    line-height: 1.2;
+    color: var(--sky-text);
+  }
+  .sky-time .time-value {
+    font-family: var(--font-mono); font-size: 12.5px; font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+  .sky-time .time-phase {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: .10em; text-transform: uppercase;
+    color: var(--sky-text-2);
+    margin-top: 1px;
+  }
+
+  .net-indicator {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--sky-text);
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--sky-chip-bg);
+    border: 1px solid var(--sky-chip-border);
+  }
+  .net-indicator .dot {
+    width: 7px; height: 7px; border-radius: 999px;
+    background: var(--crayon-green);
+  }
+  .net-indicator.offline .dot { background: var(--crayon-yellow); }
+  .net-indicator.offline { color: var(--sky-text); }
+
+  .theme-toggle {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 28px; min-width: 28px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--sky-chip-bg);
+    border: 1px solid var(--sky-chip-border);
+    color: var(--sky-text);
+    cursor: pointer;
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: .08em; text-transform: uppercase;
+    transition: background .12s ease;
+  }
+  .theme-toggle:hover { background: var(--sky-chip-border); }
+  .theme-toggle svg { width: 14px; height: 14px; }
+  .theme-toggle .label { margin-left: 5px; }
+  @media (max-width: 600px) { .theme-toggle .label { display: none; } }
+
+  main { flex: 1; max-width: 1400px; width: 100%; margin: 0 auto; padding: 28px 20px 60px; }
+
+  /* ============================================================
+     Buttons
+     ============================================================ */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 14px; border-radius: var(--radius);
+    border: 1px solid var(--rule-3); background: var(--surface);
+    color: var(--ink); font-weight: 500; font-size: 13px;
+    transition: background .12s ease, border-color .12s ease, transform .04s;
+    text-decoration: none; white-space: nowrap;
+  }
+  .btn:hover { background: var(--paper-2); border-color: var(--ink-4); }
+  .btn:active { transform: translateY(1px); }
+  .btn[disabled] { opacity: .5; cursor: not-allowed; }
+  .btn-primary {
+    background: var(--accent); color: #fff; border-color: var(--accent);
+  }
+  .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .btn-ghost { border-color: transparent; background: transparent; color: var(--ink-2); }
+  .btn-ghost:hover { background: var(--paper-2); }
+  .btn-danger { color: var(--bad); border-color: var(--rule-3); }
+  .btn-danger:hover { background: var(--bad-soft); border-color: var(--bad); }
+  .btn-sm { padding: 5px 9px; font-size: 12px; }
+  .btn-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; padding: 0;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent; background: transparent;
+    color: var(--ink-3);
+  }
+  .btn-icon:hover { background: var(--paper-2); color: var(--ink); border-color: var(--rule); }
+  .btn-icon svg { width: 14px; height: 14px; }
+
+  /* ============================================================
+     Home view
+     ============================================================ */
+  .home-hero {
+    margin-bottom: 32px;
+  }
+  .home-hero h1 {
+    font-size: 28px; margin: 0 0 6px; font-weight: 600; letter-spacing: -.015em;
+  }
+  .home-hero p {
+    color: var(--ink-2); margin: 0; max-width: 60ch; font-size: 14px;
+  }
+
+  .home-actions {
+    display: flex; gap: 10px; margin-bottom: 36px;
+  }
+
+  .home-section-header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .home-section-header h2 {
+    margin: 0; font-size: 13px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3);
+  }
+  .home-section-header .count {
+    font-family: var(--mono); font-size: 12px; color: var(--ink-3);
+  }
+
+  .group-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .group-card {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: border-color .12s, box-shadow .12s;
+    display: flex; flex-direction: column; gap: 8px;
+    text-align: left;
+  }
+  .group-card:hover { border-color: var(--ink-4); box-shadow: var(--shadow-1); }
+  .group-card .row1 { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+  .group-card .name {
+    font-weight: 600; font-size: 14px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .group-card .tag {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .08em;
+    padding: 2px 6px; border-radius: 3px; text-transform: uppercase;
+  }
+  .group-card .tag-progress { background: var(--warn-soft); color: var(--warn); }
+  .group-card .tag-complete { background: var(--ok-soft); color: var(--ok); }
+  .group-card .meta {
+    color: var(--ink-3); font-size: 12px;
+    display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  .group-card .meta-item { display: inline-flex; align-items: center; gap: 4px; }
+  .group-card .meta-item code { font-family: var(--mono); font-size: 11px; color: var(--ink-2); }
+
+  .empty {
+    background: var(--surface);
+    border: 1px dashed var(--rule-2);
+    border-radius: var(--radius);
+    padding: 32px 24px; text-align: center;
+    color: var(--ink-3); font-size: 13px;
+  }
+
+  /* ============================================================
+     Setup view
+     ============================================================ */
+  .setup {
+    max-width: 560px; margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    padding: 28px;
+  }
+  .setup h1 { margin: 0 0 4px; font-size: 22px; font-weight: 600; letter-spacing: -.01em; }
+  .setup .lede { color: var(--ink-2); margin: 0 0 24px; font-size: 13px; }
+
+  .field { margin-bottom: 18px; }
+  .field label {
+    display: block; font-size: 12px; font-weight: 600; color: var(--ink-2);
+    margin-bottom: 6px;
+  }
+  .field label .marc-tag {
+    font-family: var(--mono); font-weight: 500;
+    color: var(--ink-3); font-size: 11px;
+    padding: 1px 5px; border-radius: 3px; background: var(--paper-2);
+    margin-left: 6px;
+  }
+  .field .hint {
+    font-size: 12px; color: var(--ink-3); margin-top: 5px;
+  }
+  .field input[type="text"],
+  .field input[type="number"],
+  .field select,
+  .field textarea {
+    width: 100%; padding: 9px 11px;
+    border: 1px solid var(--rule-3); border-radius: var(--radius-sm);
+    background: var(--surface);
+    transition: border-color .12s, box-shadow .12s;
+  }
+  .field input:focus,
+  .field select:focus,
+  .field textarea:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+
+  .radio-row {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .radio-pill {
+    flex: 1; min-width: 120px;
+    border: 1px solid var(--rule-3); border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    cursor: pointer; background: var(--surface);
+    display: flex; flex-direction: column; gap: 2px;
+    transition: border-color .12s, background .12s;
+  }
+  .radio-pill:hover { border-color: var(--ink-4); }
+  .radio-pill input { position: absolute; opacity: 0; pointer-events: none; }
+  .radio-pill.selected { border-color: var(--accent); background: var(--accent-soft); }
+  .radio-pill .label { font-weight: 600; font-size: 13px; }
+  .radio-pill .sub { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+  .radio-pill.selected .sub { color: var(--accent); }
+
+  .setup-actions {
+    display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px;
+    padding-top: 18px; border-top: 1px solid var(--rule);
+  }
+
+  /* ============================================================
+     Ingest view
+     ============================================================ */
+  .ingest-head {
+    display: flex; align-items: flex-start; gap: 20px;
+    margin-bottom: 18px; flex-wrap: wrap;
+  }
+  .ingest-head .left { flex: 1; min-width: 200px; }
+  .ingest-head h1 {
+    font-size: 20px; margin: 0 0 4px; font-weight: 600; letter-spacing: -.005em;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .ingest-head .group-name-edit {
+    font-size: 11px; color: var(--ink-3); background: none; border: 1px dashed transparent;
+    padding: 2px 6px; border-radius: 3px;
+  }
+  .ingest-head .group-name-edit:hover { border-color: var(--rule-2); color: var(--ink-2); }
+
+  .ingest-head .meta {
+    font-size: 12px; color: var(--ink-3); display: flex; gap: 14px; flex-wrap: wrap;
+  }
+  .ingest-head .meta code { font-family: var(--mono); color: var(--ink-2); }
+
+  .counters { display: flex; gap: 8px; }
+  .counter {
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    min-width: 78px;
+    text-align: left;
+  }
+  .counter .num { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; }
+  .counter .lbl { font-size: 10px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .08em; }
+  .counter.ok .num { color: var(--ok); }
+  .counter.bad .num { color: var(--bad); }
+
+  .work-area {
+    display: grid; grid-template-columns: 1fr 320px; gap: 18px;
+  }
+  @media (max-width: 1000px) {
+    .work-area { grid-template-columns: 1fr; }
+  }
+
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  table.rows {
+    width: 100%; border-collapse: collapse;
+    font-size: 13px;
+  }
+  table.rows thead th {
+    text-align: left; font-weight: 600; font-size: 11px;
+    color: var(--ink-3); letter-spacing: .06em; text-transform: uppercase;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper-2);
+  }
+  table.rows thead th .tag {
+    font-family: var(--mono); font-weight: 500; font-size: 10px;
+    color: var(--ink-4); margin-left: 6px;
+    text-transform: none; letter-spacing: 0;
+  }
+  table.rows tbody td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: middle;
+  }
+  table.rows tbody tr:last-child td { border-bottom: none; }
+  table.rows tbody tr.row-resolved { background: var(--surface); }
+  table.rows tbody tr.row-failed { background: var(--row-failed-bg); }
+  table.rows tbody tr.row-pending { background: var(--row-pending-bg); }
+  table.rows tbody tr.row-active { background: var(--row-active-bg); }
+  table.rows tbody tr.row-resolved-flash { animation: rowResolveFlash 1s ease-out; }
+  @keyframes rowResolveFlash {
+    0%   { background: var(--row-flash-bg); }
+    100% { background: var(--surface); }
+  }
+
+  .col-num { width: 38px; color: var(--ink-3); font-family: var(--mono); font-size: 12px; }
+  .col-isbn { width: 150px; font-family: var(--mono); font-size: 12px; }
+  .col-bc { width: 170px; font-family: var(--mono); font-size: 12px; }
+  .col-title { min-width: 0; }
+  .col-title .title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .col-title .author { color: var(--ink-3); font-size: 12px; margin-top: 2px; }
+  .col-status { width: 110px; }
+  .col-actions { width: 76px; text-align: right; }
+
+  .status-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--mono); font-size: 11px;
+    padding: 3px 7px; border-radius: 999px;
+    background: var(--paper-2); color: var(--ink-3);
+    border: 1px solid var(--rule-2);
+  }
+  .status-chip .dot { width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+  .status-chip.ok { background: var(--ok-soft); color: var(--ok); border-color: var(--ok-border); }
+  .status-chip.warn { background: var(--warn-soft); color: var(--warn); border-color: var(--warn-border); }
+  .status-chip.bad { background: var(--bad-soft); color: var(--bad); border-color: var(--bad-border); }
+  .status-chip.info { background: var(--info-soft); color: var(--info); border-color: var(--info-border); }
+
+  /* Active input row (sticky bottom) */
+  .scan-row {
+    background: var(--surface);
+    border-top: 2px solid var(--accent);
+    padding: 14px 12px;
+    display: grid; grid-template-columns: 38px 150px 170px 1fr auto; gap: 10px;
+    align-items: center;
+  }
+  .scan-row .lbl {
+    color: var(--ink-3); font-family: var(--mono); font-size: 12px;
+  }
+  .scan-row input {
+    font-family: var(--mono); font-size: 13px;
+    padding: 9px 11px;
+    border: 1px solid var(--rule-3); border-radius: var(--radius-sm);
+    background: var(--paper);
+  }
+  .scan-row input:focus {
+    border-color: var(--accent); background: var(--surface); outline: none;
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .scan-row .hint {
+    color: var(--ink-3); font-size: 12px;
+  }
+
+  /* Sidebar */
+  .sidebar { display: flex; flex-direction: column; gap: 14px; }
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .panel-head {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--rule);
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: var(--paper-2);
+  }
+  .panel-head h3 {
+    margin: 0; font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .07em; color: var(--ink-2);
+  }
+  .panel-body { padding: 12px 14px; }
+  .panel-body.scroll { max-height: 360px; overflow-y: auto; }
+
+  .unresolved-list { list-style: none; margin: 0; padding: 0; }
+  .unresolved-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--rule);
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .unresolved-list li:last-child { border-bottom: none; }
+  .unresolved-list li .isbn { font-family: var(--mono); font-size: 12px; }
+  .unresolved-list li .err { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+
+  .complete-bar {
+    margin-top: 18px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .complete-bar .summary { color: var(--ink-2); font-size: 13px; }
+  .complete-bar .summary strong { color: var(--ink); font-weight: 600; }
+  .complete-bar .actions { display: flex; gap: 8px; }
+
+  /* ============================================================
+     Modal
+     ============================================================ */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(20,20,20,.40);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 6vh 16px; z-index: 100;
+    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  }
+  .modal {
+    background: var(--surface); border-radius: var(--radius);
+    box-shadow: var(--shadow-3);
+    width: 100%; max-width: 720px;
+    max-height: 88vh; overflow: hidden;
+    display: flex; flex-direction: column;
+    border: 1px solid var(--rule);
+  }
+  .modal-head {
+    padding: 16px 20px; border-bottom: 1px solid var(--rule);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-head h2 { margin: 0; font-size: 16px; font-weight: 600; }
+  .modal-head .row-ref { font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
+  .modal-body {
+    padding: 20px; overflow-y: auto;
+  }
+  .modal-foot {
+    padding: 14px 20px; border-top: 1px solid var(--rule);
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  }
+  .modal-foot .source-note { font-size: 12px; color: var(--ink-3); font-family: var(--mono); }
+  .modal-foot .right { display: flex; gap: 8px; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 600px) { .grid2 { grid-template-columns: 1fr; } }
+
+  /* Subject editor */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px; border: 1px solid var(--rule-3); border-radius: var(--radius-sm); min-height: 38px; background: var(--surface); }
+  .chip { display: inline-flex; align-items: center; gap: 4px; background: var(--paper-2); border: 1px solid var(--rule); border-radius: 999px; padding: 3px 6px 3px 10px; font-size: 12px; }
+  .chip button { background: none; border: none; padding: 2px; cursor: pointer; color: var(--ink-3); display: inline-flex; }
+  .chip button:hover { color: var(--bad); }
+  .chip-input { flex: 1; min-width: 100px; border: none; background: transparent; padding: 4px 6px; outline: none; font-size: 12px; }
+
+  /* ============================================================
+     Toast
+     ============================================================ */
+  .toasts {
+    position: fixed; bottom: 18px; right: 18px; z-index: 200;
+    display: flex; flex-direction: column; gap: 8px;
+    max-width: 360px;
+  }
+  .toast {
+    background: var(--toast-bg);
+    color: var(--toast-fg);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-size: 13px;
+    box-shadow: var(--shadow-2);
+    animation: toastIn .18s ease-out;
+  }
+  .toast.ok { background: var(--ok); color: #fff; }
+  .toast.bad { background: var(--bad); color: #fff; }
+  .toast.warn { background: var(--warn); color: #fff; }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: translateY(0);} }
+
+  /* Misc */
+  .mono { font-family: var(--mono); }
+  .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .danger-link { color: var(--bad); background: none; border: none; padding: 0; font-size: 12px; cursor: pointer; text-decoration: underline; }
+  .danger-link:hover { color: var(--bad-deep); }
+
+  /* Filled danger button — used in destructive confirmations */
+  .btn-danger-fill {
+    background: var(--bad); color: #fff; border-color: var(--bad);
+  }
+  .btn-danger-fill:hover { background: var(--bad-deep); border-color: var(--bad-deep); }
+
+  /* file:// warning banner */
+  .local-banner {
+    background: var(--warn-soft);
+    color: var(--warn);
+    border-bottom: 1px solid var(--warn-border);
+    padding: 9px 20px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+  }
+  /* Override .local-banner's display:flex so the `hidden` attribute actually hides it */
+  .local-banner[hidden] { display: none; }
+  .local-banner code {
+    font-family: var(--font-mono); font-size: 11.5px;
+    background: var(--paper-2); color: var(--ink-2);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  .local-banner-dismiss {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: transparent;
+    color: var(--warn);
+    border: 1px solid var(--warn);
+    padding: 3px 10px 3px 8px;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: .04em;
+    cursor: pointer;
+    flex-shrink: 0;
+    align-self: center;
+    transition: background .12s ease, color .12s ease;
+  }
+  .local-banner-dismiss:hover { background: var(--warn); color: var(--warn-soft); }
+  .local-banner-dismiss .x { font-size: 14px; line-height: 1; font-weight: 400; }
+
+  /* ============================================================
+     Job list (home view) — replaces the card grid
+     ============================================================ */
+  .job-list {
+    display: flex; flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .job-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--rule);
+    transition: background .12s;
+  }
+  .job-row:last-child { border-bottom: none; }
+  .job-row:hover { background: var(--paper-2); }
+  .job-row-main {
+    flex: 1; min-width: 0;
+    cursor: pointer;
+    background: none; border: none; padding: 0; margin: 0;
+    text-align: left; color: inherit; font: inherit;
+    display: flex; flex-direction: column; gap: 5px;
+  }
+  .job-row-main:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+  .job-row-title {
+    font-weight: 600; font-size: 14px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .job-row-meta {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    font-size: 12px; color: var(--ink-3);
+  }
+  .job-row-meta code { font-family: var(--mono); font-size: 11px; color: var(--ink-2); }
+  .job-row-meta .sep { color: var(--ink-4); }
+  .job-row-actions {
+    display: flex; gap: 6px; flex-shrink: 0;
+  }
+  .job-row-actions .btn { min-height: 32px; }
+
+  @media (max-width: 640px) {
+    .job-row { flex-direction: column; align-items: stretch; gap: 10px; padding: 12px 14px; }
+    .job-row-actions { justify-content: flex-end; }
+  }
+
+  /* Mobile compaction */
+  @media (max-width: 700px) {
+    .col-isbn, .col-bc { width: 110px; font-size: 11px; }
+    .col-num { display: none; }
+    table.rows thead th, table.rows tbody td { padding: 8px 8px; }
+    .scan-row { grid-template-columns: 130px 130px 1fr; }
+    .scan-row .lbl { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="sky" id="sky-header">
+    <div class="sky-canvas">
+      <div class="sky-stars" id="sky-stars"></div>
+    </div>
+    <div class="sky-bar">
+      <a class="brand" href="#" data-action="goto-home">
+        <span class="mark">001</span>
+        <span class="name">Bibliographic Ingest</span>
+        <span class="sub" id="brand-sub"></span>
+      </a>
+      <div class="sky-spacer"></div>
+      <div class="sky-time" id="sky-time" title="Local time">
+        <span class="time-value" id="sky-time-value">—</span>
+        <span class="time-phase" id="sky-time-phase">—</span>
+      </div>
+      <div class="net-indicator" id="net-indicator" title="Network status">
+        <span class="dot"></span>
+        <span class="lbl">Online</span>
+      </div>
+      <button class="theme-toggle" id="theme-toggle" data-action="cycle-theme" title="Switch theme">
+        <span id="theme-icon"></span>
+        <span class="label" id="theme-label">Auto</span>
+      </button>
+    </div>
+  </header>
+
+  <div id="local-banner" class="local-banner" hidden>
+    <span>
+      <strong>Heads up:</strong> you're running this app from <code>file://</code>.
+      Some browsers block book lookups in this mode. If lookups fail, serve the file via a local web server &mdash; e.g.
+      open a terminal in the folder containing <code>index.html</code> and run <code>python3 -m http.server 8000</code>,
+      then visit <code>http://localhost:8000</code>.
+    </span>
+    <button class="local-banner-dismiss" data-action="dismiss-local-banner" title="Dismiss" aria-label="Dismiss">
+      <span class="x" aria-hidden="true">&times;</span>
+      <span>Dismiss</span>
+    </button>
+  </div>
+
+  <main id="view-root"><!-- views render here --></main>
+
+  <div class="toasts" id="toasts"></div>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   CONSTANTS
+   ============================================================ */
+const APP = {
+  DB_NAME: 'bib_ingest_v1',
+  DB_VERSION: 1,
+  STORE_GROUPS: 'groups',
+  STORE_ROWS: 'rows',
+};
+
+const AUDIENCE_OPTIONS = [
+  { key: 'juvenile',    label: 'Juvenile',     code: 'j',
+    summaryPrefix: 'A juvenile library resource' },
+  { key: 'young_adult', label: 'Young Adult',  code: 'd',
+    summaryPrefix: 'A young adult library resource' },
+  { key: 'adult',       label: 'Adult',        code: 'e',
+    summaryPrefix: 'An adult library resource' },
+];
+
+const STATUS = {
+  PENDING:        'pending',         // scanned, lookup not started
+  LOOKING_UP:     'looking_up',      // lookup in flight
+  RESOLVED:       'resolved',        // data populated
+  EDITED:         'edited',          // user manually edited
+  FAILED:         'failed',          // lookup returned no data
+  OFFLINE_QUEUED: 'offline_queued',  // can't look up — offline
+};
+
+const FIELD_TERMINATOR    = 0x1E;
+const SUBFIELD_SEPARATOR  = 0x1F;
+const RECORD_TERMINATOR   = 0x1D;
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const state = {
+  view: 'home',           // 'home' | 'setup' | 'ingest' | 'complete'
+  groups: [],             // list of all groups
+  groupCounts: {},        // { [groupId]: { total, resolved, failed, pending } }
+  currentGroup: null,
+  rows: [],               // rows of current group
+  isOnline: navigator.onLine,
+  pendingLookups: new Set(), // row ids
+  scanBuffer: { isbn: '', barcode: '' },
+  editingRowId: null,
+  editingGroupId: null,
+  deletingGroupId: null,
+};
+
+/* ============================================================
+   UTIL
+   ============================================================ */
+const $  = (sel, root=document) => root.querySelector(sel);
+const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function fmtDate(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  const opts = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+  return d.toLocaleString(undefined, opts);
+}
+
+function fmtYYMMDD(ts) {
+  const d = new Date(ts || Date.now());
+  const yy = String(d.getFullYear() % 100).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return yy + mm + dd;
+}
+
+function fmtMARC005(ts) {
+  // YYYYMMDDHHMMSS.0
+  const d = new Date(ts || Date.now());
+  const Y = d.getFullYear();
+  const M = String(d.getMonth() + 1).padStart(2, '0');
+  const D = String(d.getDate()).padStart(2, '0');
+  const h = String(d.getHours()).padStart(2, '0');
+  const m = String(d.getMinutes()).padStart(2, '0');
+  const s = String(d.getSeconds()).padStart(2, '0');
+  return `${Y}${M}${D}${h}${m}${s}.0`;
+}
+
+function cleanIsbn(raw) {
+  if (!raw) return '';
+  return String(raw).replace(/[^0-9X]/gi, '').toUpperCase();
+}
+
+function looksLikeIsbn(raw) {
+  const s = cleanIsbn(raw);
+  return s.length === 10 || s.length === 13;
+}
+
+function toast(msg, type='info', ms=3000) {
+  const wrap = $('#toasts');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => {
+    el.style.opacity = 0;
+    el.style.transition = 'opacity .2s';
+    setTimeout(() => el.remove(), 220);
+  }, ms);
+}
+
+function cutterFromName(authorOrTitle) {
+  // First 3 letters of author surname (uppercased).
+  // If author is "Last, First", take "Last".
+  // If only a title is provided, skip leading "The/A/An " and take first 3 letters.
+  if (!authorOrTitle) return '';
+  let s = String(authorOrTitle).trim();
+  if (s.includes(',')) s = s.split(',')[0];           // surname before comma
+  else if (s.split(/\s+/).length > 1) s = s.split(/\s+/).slice(-1)[0]; // last word
+  s = s.replace(/^(the|a|an)\s+/i, '');
+  s = s.replace(/[^A-Za-z]/g, '');
+  return s.slice(0, 3).toUpperCase();
+}
+
+function cutterFromTitle(title) {
+  if (!title) return '';
+  let s = String(title).trim().replace(/^(the|a|an)\s+/i, '');
+  s = s.replace(/[^A-Za-z]/g, '');
+  return s.slice(0, 3).toUpperCase();
+}
+
+/* ============================================================
+   INDEXEDDB
+   ============================================================ */
+let _db = null;
+function openDb() {
+  if (_db) return Promise.resolve(_db);
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(APP.DB_NAME, APP.DB_VERSION);
+    req.onupgradeneeded = (e) => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(APP.STORE_GROUPS)) {
+        db.createObjectStore(APP.STORE_GROUPS, { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains(APP.STORE_ROWS)) {
+        const s = db.createObjectStore(APP.STORE_ROWS, { keyPath: 'id' });
+        s.createIndex('groupId', 'groupId', { unique: false });
+      }
+    };
+    req.onsuccess = () => { _db = req.result; res(_db); };
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function txStore(storeName, mode='readonly') {
+  return openDb().then(db => db.transaction(storeName, mode).objectStore(storeName));
+}
+
+async function dbPut(store, val) {
+  const s = await txStore(store, 'readwrite');
+  return new Promise((res, rej) => {
+    const r = s.put(val);
+    r.onsuccess = () => res(val);
+    r.onerror = () => rej(r.error);
+  });
+}
+
+async function dbGet(store, key) {
+  const s = await txStore(store, 'readonly');
+  return new Promise((res, rej) => {
+    const r = s.get(key);
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+
+async function dbDelete(store, key) {
+  const s = await txStore(store, 'readwrite');
+  return new Promise((res, rej) => {
+    const r = s.delete(key);
+    r.onsuccess = () => res();
+    r.onerror = () => rej(r.error);
+  });
+}
+
+async function dbGetAll(store) {
+  const s = await txStore(store, 'readonly');
+  return new Promise((res, rej) => {
+    const r = s.getAll();
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+
+async function dbGetByIndex(store, indexName, value) {
+  const s = await txStore(store, 'readonly');
+  const idx = s.index(indexName);
+  return new Promise((res, rej) => {
+    const r = idx.getAll(value);
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+
+/* ============================================================
+   DATA MODEL HELPERS
+   ============================================================ */
+async function loadGroups() {
+  const all = await dbGetAll(APP.STORE_GROUPS);
+  all.sort((a, b) => b.createdAt - a.createdAt);
+  state.groups = all;
+  return all;
+}
+
+// Load all groups AND build a {groupId: counts} map by scanning all rows.
+// Used on the home/list view so each job can show its progress at a glance.
+async function loadGroupSummaries() {
+  await loadGroups();
+  const allRows = await dbGetAll(APP.STORE_ROWS);
+  const counts = {};
+  for (const r of allRows) {
+    if (!counts[r.groupId]) counts[r.groupId] = { total: 0, resolved: 0, failed: 0, pending: 0 };
+    const c = counts[r.groupId];
+    c.total++;
+    if (r.status === STATUS.RESOLVED || r.status === STATUS.EDITED) c.resolved++;
+    else if (r.status === STATUS.FAILED) c.failed++;
+    else c.pending++;
+  }
+  state.groupCounts = counts;
+}
+
+// Delete a group AND every row attached to it.
+async function deleteGroupCascade(groupId) {
+  const rows = await dbGetByIndex(APP.STORE_ROWS, 'groupId', groupId);
+  for (const r of rows) {
+    await dbDelete(APP.STORE_ROWS, r.id);
+  }
+  await dbDelete(APP.STORE_GROUPS, groupId);
+}
+
+async function loadRowsFor(groupId) {
+  const rows = await dbGetByIndex(APP.STORE_ROWS, 'groupId', groupId);
+  rows.sort((a, b) => a.createdAt - b.createdAt);
+  state.rows = rows;
+  return rows;
+}
+
+async function createGroup(partial) {
+  const g = {
+    id: uid(),
+    name: partial.name || `Ingestion ${fmtDate(Date.now())}`,
+    createdAt: Date.now(),
+    completedAt: null,
+    settings: {
+      catalogCode:      partial.catalogCode || 'LRRM',
+      audienceKey:      partial.audienceKey || 'juvenile',
+      defaultLanguage:  partial.defaultLanguage || 'eng',
+      fictionFallback:  partial.fictionFallback || 'E',   // 'E' (picture book) or '[Fic]'
+    },
+  };
+  await dbPut(APP.STORE_GROUPS, g);
+  return g;
+}
+
+async function updateGroup(group) {
+  await dbPut(APP.STORE_GROUPS, group);
+}
+
+async function createRow(groupId, isbn, barcode) {
+  const row = {
+    id: uid(),
+    groupId,
+    isbn: cleanIsbn(isbn),
+    barcode: String(barcode || '').trim(),
+    status: STATUS.PENDING,
+    data: null,
+    errorMsg: null,
+    source: null,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+  await dbPut(APP.STORE_ROWS, row);
+  return row;
+}
+
+async function updateRow(row) {
+  row.updatedAt = Date.now();
+  await dbPut(APP.STORE_ROWS, row);
+}
+
+async function deleteRow(rowId) {
+  await dbDelete(APP.STORE_ROWS, rowId);
+}
+
+/* ============================================================
+   LOOKUP — Open Library primary, Google Books fallback
+   ============================================================ */
+
+// JSONP utility — loads a JS resource via <script> tag, bypassing CORS.
+// Used as a fallback when fetch() fails due to file:// origin or CORS rejection.
+function jsonpRequest(url, timeoutMs = 12000) {
+  return new Promise((resolve, reject) => {
+    const cb = '__jsonp_' + Date.now() + '_' + Math.floor(Math.random() * 1e9);
+    const fullUrl = url + (url.includes('?') ? '&' : '?') + 'callback=' + cb;
+    const script = document.createElement('script');
+    let finished = false;
+    const cleanup = () => {
+      finished = true;
+      try { delete window[cb]; } catch (_) { window[cb] = undefined; }
+      if (script.parentNode) script.parentNode.removeChild(script);
+    };
+    window[cb] = (data) => {
+      if (finished) return;
+      cleanup();
+      resolve(data);
+    };
+    script.onerror = () => {
+      if (finished) return;
+      cleanup();
+      reject(new Error('JSONP request failed (script load error)'));
+    };
+    setTimeout(() => {
+      if (finished) return;
+      cleanup();
+      reject(new Error('JSONP request timed out'));
+    }, timeoutMs);
+    script.src = fullUrl;
+    document.head.appendChild(script);
+  });
+}
+
+// "Failed to fetch" / "NetworkError" / "Load failed" — generic browser fetch
+// errors that usually mean CORS rejection or unreachable host, not HTTP errors.
+function isLikelyCorsOrNetwork(err) {
+  if (!err) return false;
+  if (!(err instanceof TypeError)) return false;
+  const m = String(err.message || '').toLowerCase();
+  return m.includes('failed to fetch') ||
+         m.includes('networkerror') ||
+         m.includes('load failed') ||
+         m.includes('network request failed');
+}
+
+async function lookupOpenLibrary(isbn) {
+  const baseParams = `bibkeys=ISBN:${encodeURIComponent(isbn)}&jscmd=data`;
+  let json = null;
+  // Try fetch first — gives us proper HTTP status codes when it works.
+  try {
+    const r = await fetch(`https://openlibrary.org/api/books?${baseParams}&format=json`, {
+      headers: { 'Accept': 'application/json' },
+    });
+    if (!r.ok) throw new Error(`Open Library HTTP ${r.status}`);
+    json = await r.json();
+  } catch (fetchErr) {
+    if (isLikelyCorsOrNetwork(fetchErr)) {
+      // CORS/network — try JSONP (loads via <script>, bypasses CORS).
+      // Open Library serves JSONP when format=javascript&callback=...
+      json = await jsonpRequest(`https://openlibrary.org/api/books?${baseParams}&format=javascript`);
+    } else {
+      throw fetchErr;
+    }
+  }
+  const key = `ISBN:${isbn}`;
+  if (!json || !json[key]) return null;
+  return normalizeOpenLibrary(json[key], isbn);
+}
+
+function normalizeOpenLibrary(d, isbn) {
+  // Title / subtitle
+  let title = (d.title || '').trim();
+  if (d.subtitle) title += `: ${d.subtitle.trim()}`;
+
+  const authors = (d.authors || []).map(a => normalizeAuthorName(a.name)).filter(Boolean);
+  const publishers = (d.publishers || []).map(p => (p.name || '').trim()).filter(Boolean);
+  const pubYear = extractYear(d.publish_date);
+  const pages = d.number_of_pages || null;
+
+  // Dewey
+  let dewey = null;
+  if (d.classifications && Array.isArray(d.classifications.dewey_decimal_class)) {
+    dewey = d.classifications.dewey_decimal_class[0] || null;
+  }
+
+  // Language code: Open Library doesn't always include in 'data' endpoint;
+  // language field on the basic record is /languages/eng style. Default to 'eng'.
+  let language = 'eng';
+  if (d.languages && d.languages[0] && d.languages[0].key) {
+    const m = d.languages[0].key.match(/\/languages\/(\w+)/);
+    if (m) language = m[1];
+  }
+
+  // Subjects: take subjects[].name, dedupe, cap
+  const subjects = [];
+  const seen = new Set();
+  for (const arr of [d.subjects, d.subject_places, d.subject_people, d.subject_times]) {
+    if (!Array.isArray(arr)) continue;
+    for (const s of arr) {
+      const n = (s.name || '').trim();
+      if (!n) continue;
+      const k = n.toLowerCase();
+      if (seen.has(k)) continue;
+      seen.add(k);
+      subjects.push(n);
+      if (subjects.length >= 8) break;
+    }
+    if (subjects.length >= 8) break;
+  }
+
+  // Illustrations / dimensions: Open Library doesn't reliably provide these via this endpoint.
+  // We default to illustrated for juvenile picture books.
+  const illustrations = null;     // unknown
+  const dimensions = null;        // unknown
+
+  // Summary: notes or excerpts
+  let summary = '';
+  if (d.notes) summary = typeof d.notes === 'string' ? d.notes : (d.notes.value || '');
+  if (!summary && Array.isArray(d.excerpts) && d.excerpts[0]) {
+    summary = d.excerpts[0].text || d.excerpts[0].excerpt || '';
+  }
+  if (summary && summary.length > 800) summary = summary.slice(0, 797) + '...';
+
+  return {
+    title, authors, publishers, pubYear, pages,
+    illustrations, dimensions, language, dewey, subjects, summary,
+  };
+}
+
+async function lookupGoogleBooks(isbn) {
+  const url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${encodeURIComponent(isbn)}`;
+  const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
+  if (!r.ok) throw new Error(`Google Books HTTP ${r.status}`);
+  const json = await r.json();
+  if (!json.items || !json.items.length) return null;
+  return normalizeGoogleBooks(json.items[0], isbn);
+}
+
+function normalizeGoogleBooks(item, isbn) {
+  const v = item.volumeInfo || {};
+  let title = (v.title || '').trim();
+  if (v.subtitle) title += `: ${v.subtitle.trim()}`;
+  const authors = (v.authors || []).map(normalizeAuthorName).filter(Boolean);
+  const publishers = v.publisher ? [v.publisher.trim()] : [];
+  const pubYear = extractYear(v.publishedDate);
+  const pages = v.pageCount || null;
+  const subjects = (v.categories || []).slice(0, 8);
+  const summary = (v.description || '').slice(0, 800);
+  const language = (v.language || 'eng').toLowerCase().slice(0, 3);
+  return {
+    title, authors, publishers, pubYear, pages,
+    illustrations: null, dimensions: null,
+    language, dewey: null,
+    subjects, summary,
+  };
+}
+
+function normalizeAuthorName(raw) {
+  if (!raw) return '';
+  const s = raw.trim();
+  if (!s) return '';
+  if (s.includes(',')) return s;
+  // "Andy Glynne" -> "Glynne, Andy"
+  const parts = s.split(/\s+/);
+  if (parts.length === 1) return s;
+  const last = parts[parts.length - 1];
+  const rest = parts.slice(0, -1).join(' ');
+  return `${last}, ${rest}`;
+}
+
+function extractYear(dateStr) {
+  if (!dateStr) return null;
+  const m = String(dateStr).match(/\b(1[5-9]\d{2}|20\d{2}|21\d{2})\b/);
+  return m ? m[1] : null;
+}
+
+async function lookupIsbn(isbn) {
+  // Returns { source, data } | { error, message? }
+  if (!navigator.onLine) return { error: 'offline' };
+  const errors = [];
+  try {
+    const ol = await lookupOpenLibrary(isbn);
+    if (ol && ol.title) return { source: 'openlibrary', data: ol };
+  } catch (e) {
+    errors.push({ src: 'Open Library', err: e });
+    console.warn('Open Library error:', e);
+  }
+  try {
+    const gb = await lookupGoogleBooks(isbn);
+    if (gb && gb.title) return { source: 'googlebooks', data: gb };
+  } catch (e) {
+    errors.push({ src: 'Google Books', err: e });
+    console.warn('Google Books error:', e);
+  }
+  // If every attempt died with a network/CORS error, report it as such — not
+  // as "no record found." The book might exist; we just couldn't reach the APIs.
+  const allNetwork = errors.length > 0 && errors.every(({ err }) =>
+    isLikelyCorsOrNetwork(err) ||
+    /JSONP/i.test(String(err && err.message || ''))
+  );
+  if (allNetwork) {
+    return { error: 'network', message: 'Could not reach lookup services (network or CORS)' };
+  }
+  return { error: 'not_found' };
+}
+
+/* ============================================================
+   LOOKUP QUEUE
+   ============================================================ */
+async function startLookup(rowId) {
+  const row = state.rows.find(r => r.id === rowId);
+  if (!row) return;
+  if (row.status === STATUS.LOOKING_UP) return;
+
+  if (!navigator.onLine) {
+    row.status = STATUS.OFFLINE_QUEUED;
+    row.errorMsg = 'Offline — will retry when connection returns';
+    await updateRow(row);
+    rerenderRow(row.id);
+    return;
+  }
+
+  row.status = STATUS.LOOKING_UP;
+  await updateRow(row);
+  rerenderRow(row.id);
+  state.pendingLookups.add(rowId);
+
+  const res = await lookupIsbn(row.isbn);
+  state.pendingLookups.delete(rowId);
+
+  // Row may have been deleted while lookup was in flight
+  const stillExists = state.rows.find(r => r.id === rowId);
+  if (!stillExists) return;
+
+  if (res.error === 'offline') {
+    row.status = STATUS.OFFLINE_QUEUED;
+    row.errorMsg = 'Offline — will retry when connection returns';
+  } else if (res.error === 'network') {
+    row.status = STATUS.FAILED;
+    row.errorMsg = res.message || 'Could not reach lookup services';
+    row.source = null;
+  } else if (res.error === 'not_found') {
+    row.status = STATUS.FAILED;
+    row.errorMsg = 'No record found in Open Library or Google Books';
+    row.source = null;
+  } else {
+    row.status = STATUS.RESOLVED;
+    row.data = res.data;
+    row.source = res.source;
+    row.errorMsg = null;
+  }
+  await updateRow(row);
+  rerenderRow(row.id, { flash: row.status === STATUS.RESOLVED });
+  updateCounters();
+  updateUnresolvedPanel();
+}
+
+async function processOfflineQueue() {
+  if (!navigator.onLine) return;
+  const queued = state.rows.filter(r => r.status === STATUS.OFFLINE_QUEUED || r.status === STATUS.FAILED);
+  for (const r of queued) {
+    if (r.status === STATUS.OFFLINE_QUEUED) {
+      await startLookup(r.id);
+    }
+  }
+}
+
+/* ============================================================
+   MARC 21 WRITER (verified byte-for-byte against sample)
+   ============================================================ */
+const _enc = new TextEncoder();
+
+function _ctrlField(tag, data) {
+  const d = _enc.encode(data);
+  const out = new Uint8Array(d.length + 1);
+  out.set(d, 0);
+  out[d.length] = FIELD_TERMINATOR;
+  return { tag, bytes: out };
+}
+
+function _dataField(tag, ind1, ind2, subfields) {
+  const subs = subfields.filter(([_, v]) => v !== null && v !== undefined && v !== '');
+  const parts = [];
+  parts.push(new Uint8Array([
+    (ind1 || ' ').charCodeAt(0),
+    (ind2 || ' ').charCodeAt(0),
+  ]));
+  for (const [code, value] of subs) {
+    parts.push(new Uint8Array([SUBFIELD_SEPARATOR, code.charCodeAt(0)]));
+    parts.push(_enc.encode(String(value)));
+  }
+  parts.push(new Uint8Array([FIELD_TERMINATOR]));
+  let total = 0; for (const p of parts) total += p.length;
+  const out = new Uint8Array(total);
+  let off = 0; for (const p of parts) { out.set(p, off); off += p.length; }
+  return { tag, bytes: out };
+}
+
+function _assembleRecord(fields) {
+  const sorted = [...fields].sort((a, b) => a.tag.localeCompare(b.tag));
+
+  // Directory
+  const dirParts = [];
+  let offset = 0;
+  for (const f of sorted) {
+    const len = f.bytes.length;
+    const tag = f.tag.padStart(3, '0');
+    if (len > 9999) throw new Error(`Field ${tag} too long (${len} bytes)`);
+    const lenStr = String(len).padStart(4, '0');
+    const offStr = String(offset).padStart(5, '0');
+    if (offset > 99999) throw new Error(`Offset overflow at field ${tag}`);
+    dirParts.push(_enc.encode(tag + lenStr + offStr));
+    offset += len;
+  }
+  let dirLen = 0; for (const d of dirParts) dirLen += d.length;
+  const directory = new Uint8Array(dirLen);
+  { let p = 0; for (const d of dirParts) { directory.set(d, p); p += d.length; } }
+
+  const baseAddr = 24 + directory.length + 1;
+  let fieldDataLen = 0; for (const f of sorted) fieldDataLen += f.bytes.length;
+  const fieldData = new Uint8Array(fieldDataLen);
+  { let p = 0; for (const f of sorted) { fieldData.set(f.bytes, p); p += f.bytes.length; } }
+
+  const totalLen = baseAddr + fieldData.length + 1;
+  if (totalLen > 99999) throw new Error(`Record too long (${totalLen} bytes)`);
+
+  const leader = _enc.encode(
+    String(totalLen).padStart(5, '0') +
+    'nam a' +
+    '22' +
+    String(baseAddr).padStart(5, '0') +
+    ' i ' +
+    '4500'
+  );
+  if (leader.length !== 24) throw new Error('Leader length != 24');
+
+  const record = new Uint8Array(totalLen);
+  let cursor = 0;
+  record.set(leader, cursor); cursor += 24;
+  record.set(directory, cursor); cursor += directory.length;
+  record[cursor++] = FIELD_TERMINATOR;
+  record.set(fieldData, cursor); cursor += fieldData.length;
+  record[cursor++] = RECORD_TERMINATOR;
+  return record;
+}
+
+function buildMarcRecord(row, group, copyNumber) {
+  if (!row.data) throw new Error('Cannot build MARC for unresolved row');
+  const d = row.data;
+  const settings = group.settings;
+  const audience = AUDIENCE_OPTIONS.find(a => a.key === settings.audienceKey) || AUDIENCE_OPTIONS[0];
+
+  // Title (245)
+  const title = (d.title || '').trim();
+  const titleSubC = d.authors && d.authors.length ? d.authors.join(', ') : '';
+
+  // First author (100)
+  const firstAuthor = (d.authors && d.authors[0]) ? d.authors[0] : '';
+
+  // Call number = Dewey + Cutter; if no Dewey -> fictionFallback + Cutter
+  const cutterSrc = firstAuthor || title;
+  const cutter = firstAuthor ? cutterFromName(firstAuthor) : cutterFromTitle(title);
+  let callNum = '';
+  if (d.dewey) {
+    callNum = `${d.dewey} ${cutter}`.trim();
+  } else {
+    callNum = `${settings.fictionFallback || 'E'} ${cutter}`.trim();
+  }
+
+  // 008 (matches sample format, 30 chars):
+  // [YYMMDD-entered][s][YYYY-pub][space][country=xxu][a=ill][space][audience][space][000][space][0][space][lang][space][d]
+  const entered = fmtYYMMDD(group.createdAt || Date.now());
+  const pubYear4 = (d.pubYear && /^\d{4}$/.test(d.pubYear)) ? d.pubYear : '    ';
+  const langCode = (d.language || settings.defaultLanguage || 'eng').slice(0, 3);
+  const f008 =
+    entered + 's' + pubYear4 + ' xxua ' + audience.code + ' 000 0 ' + langCode + ' d';
+  // length: 6+1+4+1+3+1+1+1+1+3+1+1+1+3+1+1 = 30 ✓
+
+  // 020: bare ISBN (no qualifier). Use ISBN-13 if available; sample uses 13.
+  const isbn = row.isbn;
+
+  // 040: $a [catalog] $b eng $e rda $c [catalog]
+  const cat = (settings.catalogCode || 'LRRM').trim() || 'LRRM';
+
+  // 264: publication
+  const place = '[Place of publication not identified]';   // user-set decision: always this placeholder
+  const publisher = (d.publishers && d.publishers[0]) ? d.publishers[0] : '[publisher not identified]';
+  const pubYearStr = d.pubYear || '';
+
+  // 300: pages : illustrations ; dimensions (proper subfields)
+  // User decision: use proper subfields. Some data may be missing.
+  let s300_a = null, s300_b = null, s300_c = null;
+  if (d.pages) s300_a = `${d.pages} pages :`;
+  else         s300_a = '1 volume (unpaged) :';
+  if (d.illustrations !== false) s300_b = 'color illustrations ;';     // assume illustrated for juvenile by default
+  if (d.dimensions) s300_c = d.dimensions;
+  else if (audience.key === 'juvenile') s300_c = '27 cm';              // common juvenile picture book size; user can edit
+  else s300_c = null;
+  // ISBD punctuation: if no $b, $a shouldn't end in ' :'
+  if (!s300_b) s300_a = s300_a.replace(/\s*:\s*$/, '');
+  if (!s300_c) {
+    if (s300_b) s300_b = s300_b.replace(/\s*;\s*$/, '');
+    else        s300_a = s300_a.replace(/\s*;\s*$/, '');
+  }
+
+  // 520: summary
+  let summary = (d.summary || '').trim();
+  if (!summary) summary = `${audience.summaryPrefix} titled ${title}.`;
+
+  // 650: subjects (LCSH-ish; subject indicator2 = 0 in sample)
+  const subjectFields = (d.subjects || []).slice(0, 8).map(s =>
+    _dataField('650', ' ', '0', [['a', s]])
+  );
+
+  // 852: holdings
+  const fields = [
+    _ctrlField('001', row.barcode),
+    _ctrlField('005', fmtMARC005(Date.now())),
+    _ctrlField('008', f008),
+    _dataField('020', ' ', ' ', [['a', isbn]]),
+    _dataField('040', ' ', ' ', [['a', cat], ['b', 'eng'], ['e', 'rda'], ['c', cat]]),
+    _dataField('092', ' ', ' ', [['a', callNum]]),
+  ];
+  if (firstAuthor) {
+    fields.push(_dataField('100', '1', ' ', [['a', firstAuthor]]));
+  }
+  fields.push(_dataField('245', firstAuthor ? '1' : '0', '0', [
+    ['a', title],
+    ['c', titleSubC]
+  ]));
+  fields.push(_dataField('264', ' ', '1', [
+    ['a', place],
+    ['b', publisher],
+    ['c', pubYearStr]
+  ]));
+  fields.push(_dataField('300', ' ', ' ', [
+    ['a', s300_a], ['b', s300_b], ['c', s300_c]
+  ]));
+  fields.push(_dataField('336', ' ', ' ', [['a', 'text'], ['b', 'txt'], ['2', 'rdacontent']]));
+  fields.push(_dataField('337', ' ', ' ', [['a', 'unmediated'], ['b', 'n'], ['2', 'rdamedia']]));
+  fields.push(_dataField('338', ' ', ' ', [['a', 'volume'], ['b', 'nc'], ['2', 'rdacarrier']]));
+  fields.push(_dataField('520', ' ', ' ', [['a', summary]]));
+  for (const sf of subjectFields) fields.push(sf);
+  fields.push(_dataField('852', ' ', ' ', [
+    ['h', callNum],
+    ['p', row.barcode],
+    ['t', String(copyNumber)]
+  ]));
+
+  return _assembleRecord(fields);
+}
+
+function buildMrcFile(rows, group) {
+  // Assign copy numbers: within same ISBN, increment 1, 2, 3...
+  const isbnCounts = {};
+  let total = 0;
+  const records = [];
+  for (const r of rows) {
+    if (r.status !== STATUS.RESOLVED && r.status !== STATUS.EDITED) continue;
+    if (!r.data) continue;
+    isbnCounts[r.isbn] = (isbnCounts[r.isbn] || 0) + 1;
+    const rec = buildMarcRecord(r, group, isbnCounts[r.isbn]);
+    records.push(rec);
+    total += rec.length;
+  }
+  const out = new Uint8Array(total);
+  let p = 0;
+  for (const r of records) { out.set(r, p); p += r.length; }
+  return out;
+}
+
+function buildUnresolvedCsv(rows) {
+  const header = 'isbn,barcode,error,scanned_at\n';
+  const lines = rows
+    .filter(r => r.status === STATUS.FAILED || r.status === STATUS.OFFLINE_QUEUED || r.status === STATUS.PENDING)
+    .map(r => {
+      const cells = [r.isbn, r.barcode, r.errorMsg || '', new Date(r.createdAt).toISOString()];
+      return cells.map(c => {
+        const s = String(c).replace(/"/g, '""');
+        return /[",\n]/.test(s) ? `"${s}"` : s;
+      }).join(',');
+    });
+  return header + lines.join('\n');
+}
+
+function downloadBlob(data, filename, mime='application/octet-stream') {
+  const blob = (data instanceof Blob) ? data : new Blob([data], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function safeFilename(s) {
+  return String(s || 'ingest').replace(/[^A-Za-z0-9_\-.]+/g, '_').slice(0, 80);
+}
+
+/* ============================================================
+   SKY & THEME — time-of-day gradient header + Crayon Box theme
+   ============================================================ */
+
+// Keyframes for the day cycle. Each entry: hour and the three sky colors
+// (zenith, mid, horizon). Values between hours are linearly interpolated.
+// Hours 0 and 24 must mirror so the cycle is seamless.
+const SKY_KEYFRAMES = [
+  { h: 0,    top:'#0E1018', mid:'#16181C', horizon:'#1E2128' },
+  { h: 4,    top:'#16181C', mid:'#22232B', horizon:'#3A2E48' },
+  { h: 5.5,  top:'#3A4870', mid:'#7E6488', horizon:'#E89A8A' },
+  { h: 7,    top:'#5A8AD0', mid:'#B89AC0', horizon:'#F4C8A8' },
+  { h: 9,    top:'#7AAFE8', mid:'#B5D2EE', horizon:'#F0E5D2' },
+  { h: 12,   top:'#5A99D8', mid:'#A8C8E8', horizon:'#E0E5D8' },
+  { h: 15,   top:'#6AA0D8', mid:'#B5C8E0', horizon:'#F0D898' },
+  { h: 17,   top:'#5A6FA5', mid:'#D88E70', horizon:'#F4A050' },
+  { h: 18.5, top:'#3A3F5E', mid:'#9C5468', horizon:'#C75A30' },
+  { h: 19.5, top:'#1E2030', mid:'#3E2A3E', horizon:'#5A2E2E' },
+  { h: 21,   top:'#16181C', mid:'#1E2128', horizon:'#2C2436' },
+  { h: 23,   top:'#0E1018', mid:'#16181C', horizon:'#1E2128' },
+  { h: 24,   top:'#0E1018', mid:'#16181C', horizon:'#1E2128' },
+];
+
+const PHASES = [
+  { h: 0,  name: 'Late night' },
+  { h: 4,  name: 'Pre-dawn'   },
+  { h: 6,  name: 'Dawn'       },
+  { h: 8,  name: 'Morning'    },
+  { h: 11, name: 'Midday'     },
+  { h: 14, name: 'Afternoon'  },
+  { h: 17, name: 'Golden hour'},
+  { h: 19, name: 'Sunset'     },
+  { h: 20, name: 'Twilight'   },
+  { h: 22, name: 'Night'      },
+];
+
+// Hex → {r,g,b}
+function hex2rgb(hex) {
+  const h = hex.replace('#', '');
+  return {
+    r: parseInt(h.slice(0, 2), 16),
+    g: parseInt(h.slice(2, 4), 16),
+    b: parseInt(h.slice(4, 6), 16),
+  };
+}
+function rgb2hex({ r, g, b }) {
+  const toHex = n => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
+  return '#' + toHex(r) + toHex(g) + toHex(b);
+}
+function lerpHex(a, b, t) {
+  const A = hex2rgb(a), B = hex2rgb(b);
+  return rgb2hex({ r: A.r + (B.r - A.r) * t, g: A.g + (B.g - A.g) * t, b: A.b + (B.b - A.b) * t });
+}
+
+// Perceived brightness (0-255) — used to pick light vs dark text over the horizon
+function perceivedBrightness(hex) {
+  const { r, g, b } = hex2rgb(hex);
+  return Math.sqrt(0.299 * r * r + 0.587 * g * g + 0.114 * b * b);
+}
+
+// Compute the full sky state for a given hour (fractional, 0–24).
+function computeSky(hour) {
+  // Find surrounding keyframes
+  let prev = SKY_KEYFRAMES[0], next = SKY_KEYFRAMES[SKY_KEYFRAMES.length - 1];
+  for (let i = 0; i < SKY_KEYFRAMES.length - 1; i++) {
+    if (SKY_KEYFRAMES[i].h <= hour && hour < SKY_KEYFRAMES[i + 1].h) {
+      prev = SKY_KEYFRAMES[i];
+      next = SKY_KEYFRAMES[i + 1];
+      break;
+    }
+  }
+  const span = (next.h - prev.h) || 1;
+  const t = Math.max(0, Math.min(1, (hour - prev.h) / span));
+
+  const top     = lerpHex(prev.top,     next.top,     t);
+  const mid     = lerpHex(prev.mid,     next.mid,     t);
+  const horizon = lerpHex(prev.horizon, next.horizon, t);
+
+  // Star opacity ramps up between dusk and dawn
+  let starOpacity = 0;
+  if (hour >= 19.5 || hour < 5.5) starOpacity = 1;
+  else if (hour >= 18.5 && hour < 19.5) starOpacity = (hour - 18.5);
+  else if (hour >= 5.5 && hour < 6.5)   starOpacity = 1 - (hour - 5.5);
+
+  // Sky text color — chosen for contrast against the horizon (where the bar sits)
+  const horizonBrightness = perceivedBrightness(horizon);
+  const textIsDark = horizonBrightness > 145;
+  const skyText  = textIsDark ? '#1C1B18' : '#ECE6DA';
+  const skyText2 = textIsDark ? '#4A4741' : 'rgba(236,230,218,0.72)';
+  const chipBg     = textIsDark ? 'rgba(0,0,0,0.06)'   : 'rgba(255,255,255,0.10)';
+  const chipBorder = textIsDark ? 'rgba(0,0,0,0.16)'   : 'rgba(255,255,255,0.20)';
+
+  // Phase name
+  let phaseName = 'Night';
+  for (let i = PHASES.length - 1; i >= 0; i--) {
+    if (hour >= PHASES[i].h) { phaseName = PHASES[i].name; break; }
+  }
+
+  return {
+    top, mid, horizon,
+    starOpacity, skyText, skyText2,
+    chipBg, chipBorder, phaseName,
+    textIsDark,
+  };
+}
+
+// Apply a sky state to CSS variables and the time/phase display
+function applySky(s) {
+  const r = document.documentElement.style;
+  r.setProperty('--sky-top',         s.top);
+  r.setProperty('--sky-mid',         s.mid);
+  r.setProperty('--sky-horizon',     s.horizon);
+  r.setProperty('--sky-text',        s.skyText);
+  r.setProperty('--sky-text-2',      s.skyText2);
+  r.setProperty('--sky-chip-bg',     s.chipBg);
+  r.setProperty('--sky-chip-border', s.chipBorder);
+  r.setProperty('--star-opacity',    String(s.starOpacity));
+
+  const tv = document.getElementById('sky-time-value');
+  const tp = document.getElementById('sky-time-phase');
+  if (tv) {
+    const now = new Date();
+    tv.textContent = now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  }
+  if (tp) tp.textContent = s.phaseName;
+}
+
+// Render the small stars (idempotent — only re-renders if container is empty)
+function renderStars() {
+  const wrap = document.getElementById('sky-stars');
+  if (!wrap || wrap.children.length) return;
+  // Six tiny stars, scattered, varied delays
+  const positions = [
+    { x: 15, y: 28, d: 0.0 },
+    { x: 32, y: 14, d: 1.4 },
+    { x: 48, y: 35, d: 2.6 },
+    { x: 64, y: 20, d: 0.8 },
+    { x: 78, y: 42, d: 3.2 },
+    { x: 88, y: 18, d: 1.9 },
+  ];
+  for (const p of positions) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.left = p.x + '%';
+    s.style.top  = p.y + '%';
+    s.style.animationDelay = p.d + 's';
+    wrap.appendChild(s);
+  }
+}
+
+let _skyInterval = null;
+function startSkyUpdates() {
+  const tick = () => {
+    const now = new Date();
+    const hour = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+    const s = computeSky(hour);
+    applySky(s);
+    // Inform theme system if it's auto-mode
+    applyEffectiveTheme();
+  };
+  tick();
+  if (_skyInterval) clearInterval(_skyInterval);
+  _skyInterval = setInterval(tick, 60 * 1000);   // every minute
+  // Also update when tab regains focus (the sky may be very stale)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') tick();
+  });
+}
+
+/* ===== Theme management =====
+   Three modes: 'auto' (default), 'light', 'dark'.
+   In 'auto', theme follows the sky: dark from 19:30 to 06:00 (roughly).
+*/
+function getThemePref() {
+  try { return localStorage.getItem('themePref') || 'auto'; } catch (_) { return 'auto'; }
+}
+function setThemePref(v) {
+  try { localStorage.setItem('themePref', v); } catch (_) {}
+  applyEffectiveTheme();
+  updateThemeToggleUI();
+}
+function effectiveTheme() {
+  const pref = getThemePref();
+  if (pref === 'light' || pref === 'dark') return pref;
+  // Auto — follow real time of day
+  const h = new Date().getHours() + new Date().getMinutes() / 60;
+  // Night runs from ~19:30 to ~6:00
+  return (h >= 19.5 || h < 6) ? 'dark' : 'light';
+}
+function applyEffectiveTheme() {
+  document.documentElement.setAttribute('data-theme', effectiveTheme());
+}
+function cycleTheme() {
+  const pref = getThemePref();
+  const next = pref === 'auto' ? 'light' : pref === 'light' ? 'dark' : 'auto';
+  setThemePref(next);
+  toast(`Theme: ${next.charAt(0).toUpperCase() + next.slice(1)}`, 'ok', 1400);
+}
+function updateThemeToggleUI() {
+  const pref = getThemePref();
+  const icon = document.getElementById('theme-icon');
+  const label = document.getElementById('theme-label');
+  if (label) label.textContent = pref.charAt(0).toUpperCase() + pref.slice(1);
+  if (icon)  icon.innerHTML  = themeIcon(pref);
+}
+function themeIcon(pref) {
+  // Inline SVGs — sun, moon, or sun+moon for auto
+  if (pref === 'light') {
+    return `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+      <circle cx="8" cy="8" r="3"/>
+      <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6L13 13M3 13l1.4-1.4M11.6 4.4L13 3"/>
+    </svg>`;
+  }
+  if (pref === 'dark') {
+    return `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">
+      <path d="M13 9.5A6 6 0 1 1 6.5 3a5 5 0 0 0 6.5 6.5z"/>
+    </svg>`;
+  }
+  // auto — half-sun/half-moon
+  return `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+    <circle cx="8" cy="8" r="3.5"/>
+    <path d="M8 4.5a3.5 3.5 0 0 0 0 7" fill="currentColor"/>
+  </svg>`;
+}
+
+
+function setView(view) {
+  state.view = view;
+  render();
+}
+
+function render() {
+  const root = $('#view-root');
+  $('#brand-sub').textContent = (state.view === 'home') ? '' :
+    (state.currentGroup ? `· ${state.currentGroup.name}` : '');
+  updateNetIndicator();
+
+  if (state.view === 'home') {
+    root.innerHTML = renderHome();
+  } else if (state.view === 'setup') {
+    root.innerHTML = renderSetup();
+    bindSetupEvents();
+  } else if (state.view === 'ingest') {
+    root.innerHTML = renderIngest();
+    bindIngestEvents();
+    // After render, focus the active ISBN input
+    setTimeout(() => {
+      const el = $('#scan-isbn');
+      if (el) el.focus();
+    }, 0);
+  } else if (state.view === 'complete') {
+    root.innerHTML = renderComplete();
+    bindCompleteEvents();
+  }
+}
+
+function updateNetIndicator() {
+  const el = $('#net-indicator');
+  if (!el) return;
+  if (state.isOnline) {
+    el.classList.remove('offline');
+    el.querySelector('.lbl').textContent = 'Online';
+  } else {
+    el.classList.add('offline');
+    el.querySelector('.lbl').textContent = 'Offline · scans saved';
+  }
+}
+
+function renderHome() {
+  const groups = state.groups;
+  const counts = state.groupCounts || {};
+  const inProgress = groups.filter(g => !g.completedAt);
+  const completed  = groups.filter(g => g.completedAt);
+
+  const jobRow = (g) => {
+    const isPending = !g.completedAt;
+    const c = counts[g.id] || { total: 0, resolved: 0, failed: 0, pending: 0 };
+    const aud = AUDIENCE_OPTIONS.find(a => a.key === g.settings.audienceKey) || AUDIENCE_OPTIONS[0];
+    const statusChip = isPending
+      ? `<span class="status-chip warn"><span class="dot"></span>Pending</span>`
+      : `<span class="status-chip ok"><span class="dot"></span>Complete</span>`;
+    // Counts string — show only what's non-zero, but always show total
+    const countParts = [`${c.total} scanned`];
+    if (c.resolved) countParts.push(`${c.resolved} resolved`);
+    if (c.failed)   countParts.push(`${c.failed} unresolved`);
+    if (c.pending && isPending) countParts.push(`${c.pending} pending`);
+    return `
+      <div class="job-row" data-group-id="${escapeHtml(g.id)}">
+        <button class="job-row-main" data-action="open-group" data-id="${escapeHtml(g.id)}" aria-label="Open ${escapeHtml(g.name)}">
+          <div class="job-row-title">${escapeHtml(g.name)}</div>
+          <div class="job-row-meta">
+            ${statusChip}
+            <span class="sep">·</span>
+            <code>${escapeHtml(g.settings.catalogCode)}</code>
+            <span>${escapeHtml(aud.label)}</span>
+            <span class="sep">·</span>
+            <span>${countParts.join(' · ')}</span>
+            <span class="sep">·</span>
+            <span>${fmtDate(g.createdAt)}</span>
+          </div>
+        </button>
+        <div class="job-row-actions">
+          ${isPending ? `
+            <button class="btn btn-sm" data-action="edit-group" data-id="${escapeHtml(g.id)}">Edit</button>
+            <button class="btn btn-sm btn-danger" data-action="delete-group" data-id="${escapeHtml(g.id)}">Delete</button>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  };
+
+  return `
+    <section class="home-hero">
+      <h1>Scan books, get clean MARC.</h1>
+      <p>An ingestion job is a session of barcoded books. Scan ISBNs and local barcodes; the app looks each one up live and assembles a Destiny-ready <code class="mono">.mrc</code> when you're done.</p>
+    </section>
+    <div class="home-actions">
+      <button class="btn btn-primary" data-action="new-group">
+        <span class="mono" style="font-size:11px;letter-spacing:.06em;">001</span>
+        Start new ingestion
+      </button>
+    </div>
+    ${inProgress.length ? `
+      <div class="home-section-header">
+        <h2>Pending</h2>
+        <span class="count">${inProgress.length}</span>
+      </div>
+      <div class="job-list" style="margin-bottom:28px;">
+        ${inProgress.map(jobRow).join('')}
+      </div>
+    ` : ''}
+    ${completed.length ? `
+      <div class="home-section-header">
+        <h2>Complete</h2>
+        <span class="count">${completed.length}</span>
+      </div>
+      <div class="job-list">
+        ${completed.map(jobRow).join('')}
+      </div>
+    ` : (inProgress.length ? '' : `
+      <div class="empty">No ingestion jobs yet. Click <strong>Start new ingestion</strong> to begin.</div>
+    `)}
+  `;
+}
+
+function renderSetup() {
+  const lastCat = (state.groups[0] && state.groups[0].settings.catalogCode) || 'LRRM';
+  return `
+    <section class="setup">
+      <h1>New ingestion group</h1>
+      <p class="lede">These settings apply to every record in this group. You can change them later if needed.</p>
+
+      <div class="field">
+        <label for="setup-name">Group name <span class="hint" style="font-weight:400;color:var(--ink-3);">(used as the .mrc filename)</span></label>
+        <input id="setup-name" type="text" placeholder="e.g. ${escapeHtml(`${lastCat} 2026-06-16 floor cart`)}" />
+      </div>
+
+      <div class="field">
+        <label>Cataloging code <span class="marc-tag">040 $a, $c</span></label>
+        <input id="setup-cat" type="text" value="${escapeHtml(lastCat)}" maxlength="20" />
+        <div class="hint">Your library's MARC organization code. Identifies who created the record.</div>
+      </div>
+
+      <div class="field">
+        <label>Audience level <span class="marc-tag">008 / 22</span></label>
+        <div class="radio-row" id="setup-audience">
+          ${AUDIENCE_OPTIONS.map((a, i) => `
+            <label class="radio-pill ${i === 0 ? 'selected' : ''}" data-key="${a.key}">
+              <input type="radio" name="audience" value="${a.key}" ${i === 0 ? 'checked' : ''} />
+              <span class="label">${a.label}</span>
+              <span class="sub">code ${a.code}</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Default classification when Dewey is missing <span class="marc-tag">092 $a</span></label>
+        <div class="radio-row" id="setup-fic">
+          <label class="radio-pill selected" data-key="E">
+            <input type="radio" name="fic" value="E" checked />
+            <span class="label">E (Easy / picture book)</span>
+            <span class="sub">e.g. E GLY</span>
+          </label>
+          <label class="radio-pill" data-key="[Fic]">
+            <input type="radio" name="fic" value="[Fic]" />
+            <span class="label">[Fic] (Fiction)</span>
+            <span class="sub">e.g. [Fic] GLY</span>
+          </label>
+        </div>
+        <div class="hint">If a Dewey number is found via lookup, it's used instead of this fallback.</div>
+      </div>
+
+      <div class="setup-actions">
+        <button class="btn" data-action="cancel-setup">Cancel</button>
+        <button class="btn btn-primary" data-action="create-group">Start scanning</button>
+      </div>
+    </section>
+  `;
+}
+
+function renderIngest() {
+  const g = state.currentGroup;
+  const counts = countRows(state.rows);
+
+  const rowHtml = (r, idx) => {
+    const cls = `row-${r.status === STATUS.RESOLVED || r.status === STATUS.EDITED ? 'resolved' :
+                  r.status === STATUS.FAILED ? 'failed' :
+                  r.status === STATUS.LOOKING_UP ? 'pending' :
+                  r.status === STATUS.OFFLINE_QUEUED ? 'pending' :
+                  'pending'}`;
+    return `
+      <tr class="${cls}" data-row-id="${escapeHtml(r.id)}">
+        <td class="col-num">${idx + 1}</td>
+        <td class="col-isbn">${escapeHtml(r.isbn)}</td>
+        <td class="col-bc">${escapeHtml(r.barcode)}</td>
+        <td class="col-title">${renderRowTitle(r)}</td>
+        <td class="col-status">${renderStatusChip(r)}</td>
+        <td class="col-actions">
+          <button class="btn-icon" data-action="edit-row" data-id="${escapeHtml(r.id)}" title="Edit row">${iconEdit()}</button>
+          <button class="btn-icon" data-action="delete-row" data-id="${escapeHtml(r.id)}" title="Remove row">${iconTrash()}</button>
+        </td>
+      </tr>
+    `;
+  };
+
+  const tableRows = state.rows.length ?
+    state.rows.map(rowHtml).join('') :
+    `<tr><td colspan="6" style="padding:32px 16px;text-align:center;color:var(--ink-3);">Scan an ISBN to begin.</td></tr>`;
+
+  return `
+    <div class="ingest-head">
+      <div class="left">
+        <h1>
+          <span>${escapeHtml(g.name)}</span>
+          <button class="group-name-edit" data-action="rename-group">rename</button>
+        </h1>
+        <div class="meta">
+          <span><code>040 $a ${escapeHtml(g.settings.catalogCode)}</code></span>
+          <span>Audience: ${escapeHtml((AUDIENCE_OPTIONS.find(a => a.key === g.settings.audienceKey) || AUDIENCE_OPTIONS[0]).label)}</span>
+          <span>Started ${fmtDate(g.createdAt)}</span>
+          <button class="btn btn-ghost btn-sm" data-action="back-home">← All groups</button>
+        </div>
+      </div>
+      <div class="counters">
+        <div class="counter">       <div class="num">${counts.total}</div>     <div class="lbl">Scanned</div></div>
+        <div class="counter ok">    <div class="num">${counts.resolved}</div>  <div class="lbl">Resolved</div></div>
+        <div class="counter bad">   <div class="num">${counts.failed}</div>    <div class="lbl">Unresolved</div></div>
+      </div>
+    </div>
+
+    <div class="work-area">
+      <div>
+        <div class="table-wrap">
+          <table class="rows">
+            <thead>
+              <tr>
+                <th class="col-num">#</th>
+                <th class="col-isbn">ISBN <span class="tag">020 $a</span></th>
+                <th class="col-bc">Barcode <span class="tag">001 · 852 $p</span></th>
+                <th class="col-title">Title / Author <span class="tag">245 · 100</span></th>
+                <th class="col-status">Status</th>
+                <th class="col-actions"></th>
+              </tr>
+            </thead>
+            <tbody id="rows-body">
+              ${tableRows}
+            </tbody>
+          </table>
+          <div class="scan-row">
+            <span class="lbl">scan →</span>
+            <input id="scan-isbn"    type="text" placeholder="ISBN" autocomplete="off" inputmode="numeric" />
+            <input id="scan-barcode" type="text" placeholder="Local barcode" autocomplete="off" inputmode="numeric" />
+            <div class="hint">Enter to advance · second Enter commits the row</div>
+            <button class="btn btn-sm" data-action="manual-commit">Add row</button>
+          </div>
+        </div>
+
+        <div class="complete-bar">
+          <div class="summary">
+            <strong>${counts.resolved}</strong> resolved
+            · <strong>${counts.failed}</strong> unresolved
+            · <strong>${counts.pending}</strong> pending lookup
+          </div>
+          <div class="actions">
+            <button class="btn" data-action="export-unresolved" ${counts.failed === 0 && counts.pending === 0 ? 'disabled' : ''}>
+              Export unresolved CSV
+            </button>
+            <button class="btn btn-primary" data-action="complete-group" ${counts.resolved === 0 ? 'disabled' : ''}>
+              Complete ingestion group
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="sidebar">
+        <div class="panel" id="unresolved-panel">
+          <div class="panel-head">
+            <h3>Unresolved ISBNs</h3>
+            <span class="count" id="unresolved-count" style="font-family:var(--mono);font-size:11px;color:var(--ink-3);">0</span>
+          </div>
+          <div class="panel-body scroll" id="unresolved-body">
+            ${renderUnresolved()}
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>How scanning works</h3></div>
+          <div class="panel-body" style="font-size:12px;color:var(--ink-2);">
+            <p style="margin:0 0 8px;">Scan the ISBN → Enter moves to barcode. Scan the local barcode → Enter commits the row and starts a lookup.</p>
+            <p style="margin:0 0 8px;">Resolved rows turn green. Failed rows can be re-tried automatically when back online, or edited manually.</p>
+            <p style="margin:0;">Click the <strong>edit</strong> icon to amend a row before generating MARC.</p>
+          </div>
+        </div>
+      </aside>
+    </div>
+  `;
+}
+
+function renderRowTitle(r) {
+  if (r.status === STATUS.PENDING)        return `<span style="color:var(--ink-3);font-style:italic;">awaiting lookup…</span>`;
+  if (r.status === STATUS.LOOKING_UP)     return `<span style="color:var(--ink-3);font-style:italic;">looking up…</span>`;
+  if (r.status === STATUS.OFFLINE_QUEUED) return `<span style="color:var(--ink-3);font-style:italic;">queued — offline</span>`;
+  if (r.status === STATUS.FAILED)         return `<span style="color:var(--bad);">${escapeHtml(r.errorMsg || 'lookup failed')}</span>`;
+  if (r.data) {
+    const t = r.data.title || '(no title)';
+    const a = (r.data.authors || []).join('; ');
+    return `<div class="title">${escapeHtml(t)}</div>${a ? `<div class="author">${escapeHtml(a)}</div>` : ''}`;
+  }
+  return '';
+}
+
+function renderStatusChip(r) {
+  switch (r.status) {
+    case STATUS.RESOLVED:        return `<span class="status-chip ok"><span class="dot"></span>resolved</span>`;
+    case STATUS.EDITED:          return `<span class="status-chip ok"><span class="dot"></span>edited</span>`;
+    case STATUS.LOOKING_UP:      return `<span class="status-chip info"><span class="dot"></span>looking up</span>`;
+    case STATUS.OFFLINE_QUEUED:  return `<span class="status-chip warn"><span class="dot"></span>offline</span>`;
+    case STATUS.PENDING:         return `<span class="status-chip warn"><span class="dot"></span>queued</span>`;
+    case STATUS.FAILED:          return `<span class="status-chip bad"><span class="dot"></span>failed</span>`;
+  }
+  return '';
+}
+
+function countRows(rows) {
+  let total = rows.length, resolved = 0, failed = 0, pending = 0;
+  for (const r of rows) {
+    if (r.status === STATUS.RESOLVED || r.status === STATUS.EDITED) resolved++;
+    else if (r.status === STATUS.FAILED) failed++;
+    else pending++;
+  }
+  return { total, resolved, failed, pending };
+}
+
+function renderUnresolved() {
+  const unresolved = state.rows.filter(r =>
+    r.status === STATUS.FAILED ||
+    r.status === STATUS.OFFLINE_QUEUED ||
+    r.status === STATUS.PENDING ||
+    r.status === STATUS.LOOKING_UP
+  );
+  if (!unresolved.length) {
+    return `<div style="color:var(--ink-3);font-size:12px;">No unresolved ISBNs.</div>`;
+  }
+  return `<ul class="unresolved-list">${unresolved.map(r => `
+    <li>
+      <div>
+        <div class="isbn">${escapeHtml(r.isbn || '(no ISBN)')}</div>
+        <div class="err">${escapeHtml(r.errorMsg || 'pending')}</div>
+      </div>
+      <div style="display:flex;gap:4px;">
+        <button class="btn btn-sm" data-action="edit-row" data-id="${escapeHtml(r.id)}">Edit</button>
+        ${r.status === STATUS.FAILED ? `<button class="btn btn-sm" data-action="retry-row" data-id="${escapeHtml(r.id)}">Retry</button>` : ''}
+      </div>
+    </li>
+  `).join('')}</ul>`;
+}
+
+function renderComplete() {
+  const g = state.currentGroup;
+  const counts = countRows(state.rows);
+  return `
+    <section class="setup">
+      <h1>Ingestion complete</h1>
+      <p class="lede">Your MARC file has been downloaded. You can re-download it or export an unresolved-ISBN list below.</p>
+      <div class="counters" style="margin-bottom:20px;">
+        <div class="counter"><div class="num">${counts.total}</div><div class="lbl">Total scanned</div></div>
+        <div class="counter ok"><div class="num">${counts.resolved}</div><div class="lbl">In .mrc file</div></div>
+        <div class="counter bad"><div class="num">${counts.failed + counts.pending}</div><div class="lbl">Not in .mrc</div></div>
+      </div>
+      <div class="setup-actions" style="border-top:none;padding-top:0;justify-content:space-between;">
+        <button class="btn" data-action="back-home">← Back to all groups</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn" data-action="export-unresolved">Re-download unresolved CSV</button>
+          <button class="btn btn-primary" data-action="redownload-mrc">Re-download .mrc</button>
+        </div>
+      </div>
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--rule);font-size:12px;color:var(--ink-3);">
+        Filename: <code class="mono" style="color:var(--ink-2);">${escapeHtml(safeFilename(g.name) + '.mrc')}</code>
+      </div>
+    </section>
+  `;
+}
+
+function iconEdit() {
+  return `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11.5 2.5l2 2L5 13l-2.5.5L3 11l8.5-8.5z"/></svg>`;
+}
+function iconTrash() {
+  return `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 4h11M6 4V2.5h4V4M4 4l.5 9.5h7L12 4M6.5 6.5v5M9.5 6.5v5"/></svg>`;
+}
+function iconClose() {
+  return `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3l10 10M13 3L3 13"/></svg>`;
+}
+
+/* ============================================================
+   RE-RENDER HELPERS (partial updates without full repaint)
+   ============================================================ */
+function rerenderRow(rowId, opts={}) {
+  const tr = document.querySelector(`tr[data-row-id="${CSS.escape(rowId)}"]`);
+  if (!tr) return;
+  const r = state.rows.find(x => x.id === rowId);
+  if (!r) { tr.remove(); return; }
+  const idx = state.rows.indexOf(r);
+
+  // Build new HTML for inner cells
+  const cls = `row-${r.status === STATUS.RESOLVED || r.status === STATUS.EDITED ? 'resolved' :
+                r.status === STATUS.FAILED ? 'failed' :
+                'pending'}`;
+  tr.className = cls + (opts.flash ? ' row-resolved-flash' : '');
+  tr.innerHTML = `
+    <td class="col-num">${idx + 1}</td>
+    <td class="col-isbn">${escapeHtml(r.isbn)}</td>
+    <td class="col-bc">${escapeHtml(r.barcode)}</td>
+    <td class="col-title">${renderRowTitle(r)}</td>
+    <td class="col-status">${renderStatusChip(r)}</td>
+    <td class="col-actions">
+      <button class="btn-icon" data-action="edit-row" data-id="${escapeHtml(r.id)}" title="Edit row">${iconEdit()}</button>
+      <button class="btn-icon" data-action="delete-row" data-id="${escapeHtml(r.id)}" title="Remove row">${iconTrash()}</button>
+    </td>
+  `;
+}
+
+function appendRowToTable(r) {
+  const tbody = $('#rows-body');
+  if (!tbody) return;
+  // If tbody contains the "Scan an ISBN to begin" placeholder, clear it
+  if (state.rows.length === 1) tbody.innerHTML = '';
+  const tr = document.createElement('tr');
+  tr.setAttribute('data-row-id', r.id);
+  tbody.appendChild(tr);
+  rerenderRow(r.id);
+}
+
+function updateCounters() {
+  const c = countRows(state.rows);
+  const counters = $$('.counter');
+  if (counters.length >= 3) {
+    counters[0].querySelector('.num').textContent = c.total;
+    counters[1].querySelector('.num').textContent = c.resolved;
+    counters[2].querySelector('.num').textContent = c.failed;
+  }
+  const sum = $('.complete-bar .summary');
+  if (sum) {
+    sum.innerHTML = `<strong>${c.resolved}</strong> resolved · <strong>${c.failed}</strong> unresolved · <strong>${c.pending}</strong> pending lookup`;
+  }
+  const btn = document.querySelector('[data-action="complete-group"]');
+  if (btn) btn.disabled = c.resolved === 0;
+  const csvBtn = document.querySelector('[data-action="export-unresolved"]');
+  if (csvBtn) csvBtn.disabled = (c.failed === 0 && c.pending === 0);
+}
+
+function updateUnresolvedPanel() {
+  const body = $('#unresolved-body');
+  const count = $('#unresolved-count');
+  if (body) body.innerHTML = renderUnresolved();
+  if (count) {
+    const n = state.rows.filter(r => r.status === STATUS.FAILED || r.status === STATUS.OFFLINE_QUEUED || r.status === STATUS.PENDING || r.status === STATUS.LOOKING_UP).length;
+    count.textContent = n;
+  }
+}
+
+/* ============================================================
+   EVENT BINDINGS
+   ============================================================ */
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('[data-action]');
+  if (!t) return;
+  const action = t.getAttribute('data-action');
+  const id = t.getAttribute('data-id');
+  switch (action) {
+    case 'goto-home':       e.preventDefault(); goHome(); break;
+    case 'back-home':       goHome(); break;
+    case 'new-group':       setView('setup'); break;
+    case 'cancel-setup':    setView('home'); break;
+    case 'create-group':    handleCreateGroup(); break;
+    case 'open-group':      openGroup(id); break;
+    case 'edit-group':      openGroupEditModal(id); break;
+    case 'delete-group':    openDeleteGroupModal(id); break;
+    case 'confirm-delete-group': handleConfirmDeleteGroup(id); break;
+    case 'save-group-edit': handleGroupEditSave(); break;
+    case 'edit-row':        openEditModal(id); break;
+    case 'delete-row':      handleDeleteRow(id); break;
+    case 'retry-row':       startLookup(id); break;
+    case 'manual-commit':   handleManualCommit(); break;
+    case 'complete-group':  handleCompleteGroup(); break;
+    case 'export-unresolved': handleExportUnresolved(); break;
+    case 'redownload-mrc':  handleRedownloadMrc(); break;
+    case 'rename-group':    handleRenameGroup(); break;
+    case 'modal-close':     closeModal(); break;
+    case 'modal-save':      handleModalSave(); break;
+    case 'add-subject':     addSubjectChip(); break;
+    case 'remove-subject':  removeSubjectChip(t.getAttribute('data-val')); break;
+    case 'dismiss-local-banner': {
+      const b = document.getElementById('local-banner');
+      if (b) b.hidden = true;
+      try { sessionStorage.setItem('localBannerDismissed', '1'); } catch (_) {}
+      break;
+    }
+    case 'cycle-theme': cycleTheme(); break;
+  }
+});
+
+async function goHome() {
+  state.currentGroup = null;
+  state.rows = [];
+  await loadGroupSummaries();
+  setView('home');
+}
+
+function bindSetupEvents() {
+  // Radio pill clicks
+  $$('.radio-pill').forEach(p => {
+    p.addEventListener('click', (e) => {
+      const group = p.closest('.radio-row');
+      if (!group) return;
+      $$('.radio-pill', group).forEach(x => x.classList.remove('selected'));
+      p.classList.add('selected');
+      const input = p.querySelector('input');
+      if (input) input.checked = true;
+    });
+  });
+}
+
+async function handleCreateGroup() {
+  const name = $('#setup-name').value.trim() || `Ingest ${fmtDate(Date.now())}`;
+  const cat  = $('#setup-cat').value.trim() || 'LRRM';
+  const audienceKey = (document.querySelector('input[name="audience"]:checked') || {}).value || 'juvenile';
+  const fictionFallback = (document.querySelector('input[name="fic"]:checked') || {}).value || 'E';
+  try {
+    const g = await createGroup({ name, catalogCode: cat, audienceKey, fictionFallback });
+    state.currentGroup = g;
+    state.rows = [];
+    await loadGroups();
+    setView('ingest');
+  } catch (e) {
+    console.error(e);
+    toast('Could not create group: ' + e.message, 'bad');
+  }
+}
+
+async function openGroup(id) {
+  const g = state.groups.find(x => x.id === id);
+  if (!g) { toast('Group not found', 'bad'); return; }
+  state.currentGroup = g;
+  await loadRowsFor(g.id);
+  setView('ingest');
+  // Retry offline-queued rows if we have network
+  setTimeout(processOfflineQueue, 200);
+}
+
+function bindIngestEvents() {
+  const isbnEl = $('#scan-isbn');
+  const bcEl   = $('#scan-barcode');
+  if (!isbnEl || !bcEl) return;
+  isbnEl.addEventListener('keydown', onIsbnKey);
+  bcEl.addEventListener('keydown', onBarcodeKey);
+  // Keep ISBN focused if user clicks elsewhere by accident? No — be unintrusive.
+}
+
+function onIsbnKey(e) {
+  if (e.key === 'Enter' || e.key === 'Tab') {
+    e.preventDefault();
+    const v = $('#scan-isbn').value.trim();
+    if (!v) {
+      // Empty Enter → skip to barcode anyway? Let's allow it (in case user types manually)
+      $('#scan-barcode').focus();
+      return;
+    }
+    if (!looksLikeIsbn(v)) {
+      toast(`"${v}" doesn't look like a valid ISBN — added anyway`, 'warn');
+    }
+    $('#scan-barcode').focus();
+  }
+}
+
+function onBarcodeKey(e) {
+  if (e.key === 'Enter' || e.key === 'Tab') {
+    e.preventDefault();
+    handleManualCommit();
+  }
+}
+
+async function handleManualCommit() {
+  const isbn    = $('#scan-isbn').value.trim();
+  const barcode = $('#scan-barcode').value.trim();
+  if (!isbn && !barcode) { $('#scan-isbn').focus(); return; }
+  if (!isbn) { toast('Missing ISBN', 'warn'); $('#scan-isbn').focus(); return; }
+  if (!barcode) { toast('Missing local barcode', 'warn'); $('#scan-barcode').focus(); return; }
+
+  try {
+    const row = await createRow(state.currentGroup.id, isbn, barcode);
+    state.rows.push(row);
+    appendRowToTable(row);
+    updateCounters();
+    updateUnresolvedPanel();
+    // Reset inputs and refocus
+    $('#scan-isbn').value = '';
+    $('#scan-barcode').value = '';
+    $('#scan-isbn').focus();
+    // Kick off lookup
+    startLookup(row.id);
+  } catch (e) {
+    console.error(e);
+    toast('Could not save row: ' + e.message, 'bad');
+  }
+}
+
+async function handleDeleteRow(rowId) {
+  const r = state.rows.find(x => x.id === rowId);
+  if (!r) return;
+  if (!confirm(`Remove row for ISBN ${r.isbn}?`)) return;
+  await deleteRow(rowId);
+  state.rows = state.rows.filter(x => x.id !== rowId);
+  // Re-render the whole table to fix row numbers
+  const tbody = $('#rows-body');
+  if (tbody) {
+    if (!state.rows.length) {
+      tbody.innerHTML = `<tr><td colspan="6" style="padding:32px 16px;text-align:center;color:var(--ink-3);">Scan an ISBN to begin.</td></tr>`;
+    } else {
+      tbody.innerHTML = state.rows.map((r, i) => {
+        const cls = `row-${r.status === STATUS.RESOLVED || r.status === STATUS.EDITED ? 'resolved' :
+                      r.status === STATUS.FAILED ? 'failed' : 'pending'}`;
+        return `
+          <tr class="${cls}" data-row-id="${escapeHtml(r.id)}">
+            <td class="col-num">${i + 1}</td>
+            <td class="col-isbn">${escapeHtml(r.isbn)}</td>
+            <td class="col-bc">${escapeHtml(r.barcode)}</td>
+            <td class="col-title">${renderRowTitle(r)}</td>
+            <td class="col-status">${renderStatusChip(r)}</td>
+            <td class="col-actions">
+              <button class="btn-icon" data-action="edit-row" data-id="${escapeHtml(r.id)}" title="Edit row">${iconEdit()}</button>
+              <button class="btn-icon" data-action="delete-row" data-id="${escapeHtml(r.id)}" title="Remove row">${iconTrash()}</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+  }
+  updateCounters();
+  updateUnresolvedPanel();
+}
+
+async function handleRenameGroup() {
+  const g = state.currentGroup;
+  const next = prompt('Group name:', g.name);
+  if (next == null) return;
+  const trimmed = next.trim();
+  if (!trimmed) return;
+  g.name = trimmed;
+  await updateGroup(g);
+  render();
+}
+
+/* ============================================================
+   EDIT MODAL
+   ============================================================ */
+function openEditModal(rowId) {
+  const r = state.rows.find(x => x.id === rowId);
+  if (!r) return;
+  state.editingRowId = rowId;
+  const d = r.data || {};
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.id = 'edit-modal';
+  modal.innerHTML = `
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h2>Edit record</h2>
+        <span class="row-ref">001 ${escapeHtml(r.barcode || '(no barcode)')} · 020 ${escapeHtml(r.isbn || '(no ISBN)')}</span>
+        <button class="btn-icon" data-action="modal-close" title="Close">${iconClose()}</button>
+      </div>
+      <div class="modal-body">
+        <div class="grid2">
+          <div class="field">
+            <label>ISBN <span class="marc-tag">020 $a</span></label>
+            <input id="em-isbn" type="text" value="${escapeHtml(r.isbn || '')}" class="mono" />
+          </div>
+          <div class="field">
+            <label>Local barcode <span class="marc-tag">001 · 852 $p</span></label>
+            <input id="em-barcode" type="text" value="${escapeHtml(r.barcode || '')}" class="mono" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Title <span class="marc-tag">245 $a</span></label>
+          <input id="em-title" type="text" value="${escapeHtml(d.title || '')}" />
+        </div>
+
+        <div class="field">
+          <label>Authors <span class="marc-tag">100 $a · 245 $c</span> <span class="hint" style="font-weight:400;">one per line, "Last, First"</span></label>
+          <textarea id="em-authors" rows="2">${escapeHtml((d.authors || []).join('\n'))}</textarea>
+        </div>
+
+        <div class="grid2">
+          <div class="field">
+            <label>Publisher <span class="marc-tag">264 $b</span></label>
+            <input id="em-publisher" type="text" value="${escapeHtml((d.publishers || [])[0] || '')}" />
+          </div>
+          <div class="field">
+            <label>Pub year <span class="marc-tag">264 $c · 008</span></label>
+            <input id="em-pubyear" type="text" value="${escapeHtml(d.pubYear || '')}" maxlength="4" />
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="field">
+            <label>Pages <span class="marc-tag">300 $a</span></label>
+            <input id="em-pages" type="number" min="1" value="${d.pages || ''}" />
+          </div>
+          <div class="field">
+            <label>Dimensions <span class="marc-tag">300 $c</span></label>
+            <input id="em-dimensions" type="text" value="${escapeHtml(d.dimensions || '')}" placeholder="e.g. 27 cm" />
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="field">
+            <label>Illustrations <span class="marc-tag">300 $b</span></label>
+            <select id="em-ill">
+              <option value="">color illustrations (default)</option>
+              <option value="bw" ${d.illustrations === 'bw' ? 'selected' : ''}>black-and-white illustrations</option>
+              <option value="none" ${d.illustrations === 'none' ? 'selected' : ''}>(no illustrations)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Language <span class="marc-tag">008 / 35–37</span></label>
+            <input id="em-language" type="text" maxlength="3" value="${escapeHtml(d.language || 'eng')}" class="mono" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Dewey number <span class="marc-tag">092 $a (numeric part)</span></label>
+          <input id="em-dewey" type="text" value="${escapeHtml(d.dewey || '')}" placeholder="e.g. 305.9 — leave blank to use fallback" />
+        </div>
+
+        <div class="field">
+          <label>Subjects <span class="marc-tag">650 $a</span></label>
+          <div class="chips" id="em-subjects">
+            ${(d.subjects || []).map(s => subjectChipHtml(s)).join('')}
+            <input class="chip-input" id="em-subject-input" placeholder="add subject + Enter" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Summary <span class="marc-tag">520 $a</span></label>
+          <textarea id="em-summary" rows="3">${escapeHtml(d.summary || '')}</textarea>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <span class="source-note">${r.source ? 'Source: ' + r.source : 'No lookup data — manual entry'}</span>
+        <div class="right">
+          <button class="btn" data-action="modal-close">Cancel</button>
+          <button class="btn btn-primary" data-action="modal-save">Save changes</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  // Subject input handler
+  $('#em-subject-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); addSubjectChip(); }
+  });
+  // Close on backdrop click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+  // Esc to close
+  document.addEventListener('keydown', escCloseHandler);
+  // Focus title
+  setTimeout(() => $('#em-title').focus(), 0);
+}
+
+function escCloseHandler(e) {
+  if (e.key === 'Escape') closeModal();
+}
+
+function subjectChipHtml(s) {
+  return `<span class="chip">${escapeHtml(s)}<button data-action="remove-subject" data-val="${escapeHtml(s)}" aria-label="Remove">${iconClose()}</button></span>`;
+}
+
+function addSubjectChip() {
+  const inp = $('#em-subject-input');
+  if (!inp) return;
+  const v = inp.value.trim();
+  if (!v) return;
+  const container = $('#em-subjects');
+  // insert before the input
+  const chip = document.createElement('span');
+  chip.className = 'chip';
+  chip.innerHTML = `${escapeHtml(v)}<button data-action="remove-subject" data-val="${escapeHtml(v)}" aria-label="Remove">${iconClose()}</button>`;
+  container.insertBefore(chip, inp);
+  inp.value = '';
+  inp.focus();
+}
+
+function removeSubjectChip(val) {
+  $$('#em-subjects .chip').forEach(c => {
+    if (c.textContent.trim().replace(/×$/, '').trim() === val ||
+        c.querySelector('button[data-val]')?.getAttribute('data-val') === val) {
+      c.remove();
+    }
+  });
+}
+
+function readSubjectsFromModal() {
+  const out = [];
+  $$('#em-subjects .chip').forEach(c => {
+    const btn = c.querySelector('button[data-val]');
+    if (btn) out.push(btn.getAttribute('data-val'));
+  });
+  return out;
+}
+
+async function handleModalSave() {
+  const r = state.rows.find(x => x.id === state.editingRowId);
+  if (!r) { closeModal(); return; }
+  const data = {
+    title:        $('#em-title').value.trim(),
+    authors:      $('#em-authors').value.split('\n').map(s => s.trim()).filter(Boolean),
+    publishers:   $('#em-publisher').value.trim() ? [$('#em-publisher').value.trim()] : [],
+    pubYear:      $('#em-pubyear').value.trim() || null,
+    pages:        $('#em-pages').value ? parseInt($('#em-pages').value, 10) : null,
+    dimensions:   $('#em-dimensions').value.trim() || null,
+    illustrations:$('#em-ill').value || null,
+    language:     $('#em-language').value.trim().toLowerCase() || 'eng',
+    dewey:        $('#em-dewey').value.trim() || null,
+    subjects:     readSubjectsFromModal(),
+    summary:      $('#em-summary').value.trim() || '',
+  };
+  r.isbn    = cleanIsbn($('#em-isbn').value);
+  r.barcode = $('#em-barcode').value.trim();
+  r.data = data;
+  // If the row was failed/queued/pending and now has a real title, mark resolved
+  if (data.title) {
+    r.status   = STATUS.EDITED;
+    r.errorMsg = null;
+    r.source   = r.source || 'manual';
+  }
+  await updateRow(r);
+  rerenderRow(r.id);
+  updateCounters();
+  updateUnresolvedPanel();
+  closeModal();
+  toast('Saved', 'ok', 1600);
+}
+
+function closeModal() {
+  $$('.modal-backdrop').forEach(m => m.remove());
+  state.editingRowId = null;
+  state.editingGroupId = null;
+  state.deletingGroupId = null;
+  document.removeEventListener('keydown', escCloseHandler);
+}
+
+/* ============================================================
+   GROUP EDIT MODAL (for pending ingestion jobs)
+   ============================================================ */
+function openGroupEditModal(groupId) {
+  const g = state.groups.find(x => x.id === groupId);
+  if (!g) return;
+  if (g.completedAt) { toast('Completed jobs can\u2019t be edited', 'warn'); return; }
+  state.editingGroupId = groupId;
+
+  const audKey = g.settings.audienceKey;
+  const fic    = g.settings.fictionFallback || 'E';
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.id = 'group-edit-modal';
+  modal.innerHTML = `
+    <div class="modal" style="max-width: 560px;" role="dialog" aria-modal="true" aria-labelledby="ge-title">
+      <div class="modal-head">
+        <h2 id="ge-title">Edit ingestion job</h2>
+        <button class="btn-icon" data-action="modal-close" title="Close">${iconClose()}</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label for="ge-name">Group name</label>
+          <input id="ge-name" type="text" value="${escapeHtml(g.name)}" />
+          <div class="hint">Used as the .mrc filename.</div>
+        </div>
+
+        <div class="field">
+          <label for="ge-cat">Cataloging code <span class="marc-tag">040 $a, $c</span></label>
+          <input id="ge-cat" type="text" value="${escapeHtml(g.settings.catalogCode)}" maxlength="20" />
+        </div>
+
+        <div class="field">
+          <label>Audience level <span class="marc-tag">008 / 22</span></label>
+          <div class="radio-row" id="ge-audience">
+            ${AUDIENCE_OPTIONS.map(a => `
+              <label class="radio-pill ${a.key === audKey ? 'selected' : ''}" data-key="${a.key}">
+                <input type="radio" name="ge-audience" value="${a.key}" ${a.key === audKey ? 'checked' : ''} />
+                <span class="label">${a.label}</span>
+                <span class="sub">code ${a.code}</span>
+              </label>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Default classification when Dewey is missing <span class="marc-tag">092 $a</span></label>
+          <div class="radio-row" id="ge-fic">
+            <label class="radio-pill ${fic === 'E' ? 'selected' : ''}" data-key="E">
+              <input type="radio" name="ge-fic" value="E" ${fic === 'E' ? 'checked' : ''} />
+              <span class="label">E (Easy / picture book)</span>
+              <span class="sub">e.g. E GLY</span>
+            </label>
+            <label class="radio-pill ${fic === '[Fic]' ? 'selected' : ''}" data-key="[Fic]">
+              <input type="radio" name="ge-fic" value="[Fic]" ${fic === '[Fic]' ? 'checked' : ''} />
+              <span class="label">[Fic] (Fiction)</span>
+              <span class="sub">e.g. [Fic] GLY</span>
+            </label>
+          </div>
+          <div class="hint">Changes apply at MARC generation time — including for rows already scanned.</div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <div></div>
+        <div class="right">
+          <button class="btn" data-action="modal-close">Cancel</button>
+          <button class="btn btn-primary" data-action="save-group-edit">Save changes</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  // Wire up radio pills inside this modal only
+  modal.querySelectorAll('.radio-pill').forEach(p => {
+    p.addEventListener('click', () => {
+      const row = p.closest('.radio-row');
+      if (!row) return;
+      row.querySelectorAll('.radio-pill').forEach(x => x.classList.remove('selected'));
+      p.classList.add('selected');
+      const input = p.querySelector('input');
+      if (input) input.checked = true;
+    });
+  });
+
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', escCloseHandler);
+  setTimeout(() => $('#ge-name')?.focus(), 0);
+}
+
+async function handleGroupEditSave() {
+  const g = state.groups.find(x => x.id === state.editingGroupId);
+  if (!g) { closeModal(); return; }
+
+  const name = ($('#ge-name')?.value || '').trim();
+  if (!name) { toast('Name cannot be empty', 'warn'); $('#ge-name')?.focus(); return; }
+  const cat = ($('#ge-cat')?.value || '').trim() || 'LRRM';
+  const audienceKey = (document.querySelector('input[name="ge-audience"]:checked') || {}).value || g.settings.audienceKey;
+  const fictionFallback = (document.querySelector('input[name="ge-fic"]:checked') || {}).value || g.settings.fictionFallback || 'E';
+
+  g.name = name;
+  g.settings.catalogCode    = cat;
+  g.settings.audienceKey    = audienceKey;
+  g.settings.fictionFallback = fictionFallback;
+
+  try {
+    await updateGroup(g);
+    closeModal();
+    toast('Saved', 'ok', 1600);
+    render();
+  } catch (e) {
+    console.error(e);
+    toast('Could not save: ' + e.message, 'bad');
+  }
+}
+
+/* ============================================================
+   GROUP DELETE CONFIRMATION MODAL
+   ============================================================ */
+function openDeleteGroupModal(groupId) {
+  const g = state.groups.find(x => x.id === groupId);
+  if (!g) return;
+  state.deletingGroupId = groupId;
+  const c = state.groupCounts[groupId] || { total: 0 };
+  const rowWord = c.total === 1 ? 'row' : 'rows';
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.id = 'delete-group-modal';
+  modal.innerHTML = `
+    <div class="modal" style="max-width: 480px;" role="alertdialog" aria-modal="true" aria-labelledby="dg-title" aria-describedby="dg-desc">
+      <div class="modal-head">
+        <h2 id="dg-title">Delete ingestion job?</h2>
+      </div>
+      <div class="modal-body" id="dg-desc">
+        <p style="margin: 0 0 14px; font-size: 14px;">
+          You're about to delete <strong>${escapeHtml(g.name)}</strong>${c.total ? ` along with all <strong>${c.total}</strong> scanned ${rowWord}` : ''}.
+        </p>
+        <p style="margin: 0; padding: 11px 13px; background: var(--bad-soft); color: var(--bad); border-radius: var(--radius-sm); font-size: 13px; border: 1px solid #E1B7AE; line-height: 1.5;">
+          <strong>This action is irreversible and cannot be undone.</strong>
+        </p>
+      </div>
+      <div class="modal-foot">
+        <div></div>
+        <div class="right">
+          <button class="btn" data-action="modal-close" id="dg-cancel">Cancel</button>
+          <button class="btn btn-danger-fill" data-action="confirm-delete-group" data-id="${escapeHtml(g.id)}">Yes, Please Delete</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', escCloseHandler);
+  // Focus Cancel by default — safer than focusing the destructive button
+  setTimeout(() => $('#dg-cancel')?.focus(), 0);
+}
+
+async function handleConfirmDeleteGroup(groupId) {
+  if (!groupId) return;
+  try {
+    await deleteGroupCascade(groupId);
+    closeModal();
+    toast('Ingestion job deleted', 'ok', 2000);
+    await loadGroupSummaries();
+    render();
+  } catch (e) {
+    console.error(e);
+    toast('Could not delete: ' + e.message, 'bad');
+  }
+}
+
+/* ============================================================
+   COMPLETE / EXPORT
+   ============================================================ */
+async function handleCompleteGroup() {
+  const g = state.currentGroup;
+  const c = countRows(state.rows);
+  if (c.resolved === 0) { toast('No resolved records to export', 'warn'); return; }
+  if (c.failed + c.pending > 0) {
+    if (!confirm(`${c.failed + c.pending} row(s) are unresolved and won't be in the .mrc file. Complete anyway?`)) return;
+  }
+  try {
+    const mrc = buildMrcFile(state.rows, g);
+    downloadBlob(mrc, safeFilename(g.name) + '.mrc', 'application/marc');
+    g.completedAt = Date.now();
+    await updateGroup(g);
+    toast('MARC file downloaded', 'ok');
+    setView('complete');
+  } catch (e) {
+    console.error(e);
+    toast('Could not build MARC file: ' + e.message, 'bad');
+  }
+}
+
+function handleExportUnresolved() {
+  const csv = buildUnresolvedCsv(state.rows);
+  const name = safeFilename(state.currentGroup.name) + '_unresolved.csv';
+  downloadBlob(csv, name, 'text/csv');
+}
+
+function handleRedownloadMrc() {
+  const mrc = buildMrcFile(state.rows, state.currentGroup);
+  downloadBlob(mrc, safeFilename(state.currentGroup.name) + '.mrc', 'application/marc');
+}
+
+function bindCompleteEvents() {}
+
+/* ============================================================
+   NETWORK
+   ============================================================ */
+function setupNetworkListener() {
+  window.addEventListener('online', () => {
+    state.isOnline = true;
+    updateNetIndicator();
+    toast('Back online — retrying queued lookups', 'ok', 2200);
+    processOfflineQueue();
+  });
+  window.addEventListener('offline', () => {
+    state.isOnline = false;
+    updateNetIndicator();
+    toast('Offline — scans will keep saving', 'warn', 2200);
+  });
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+async function init() {
+  try {
+    // Apply theme + start the sky as early as possible so the header isn't
+    // a flash of unstyled gradient. Sky/theme don't depend on the DB.
+    applyEffectiveTheme();
+    renderStars();
+    startSkyUpdates();
+    updateThemeToggleUI();
+
+    // Surface the file:// banner if relevant — explains "Failed to fetch" before
+    // the user hits it. Only shown once per session unless dismissed.
+    if (location.protocol === 'file:') {
+      let dismissed = false;
+      try { dismissed = sessionStorage.getItem('localBannerDismissed') === '1'; } catch (_) {}
+      if (!dismissed) {
+        const b = document.getElementById('local-banner');
+        if (b) b.hidden = false;
+      }
+    }
+    await openDb();
+    await loadGroupSummaries();
+    setupNetworkListener();
+    setView('home');
+  } catch (e) {
+    console.error(e);
+    document.getElementById('view-root').innerHTML = `
+      <div class="empty" style="border-color:var(--bad);color:var(--bad);">
+        Couldn't open local storage: ${escapeHtml(e.message)}.
+        IndexedDB may be disabled in your browser (private mode in Safari does this).
+      </div>
+    `;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
