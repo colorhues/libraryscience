@@ -735,6 +735,26 @@
   .toast.warn { background: var(--warn); color: #fff; }
   @keyframes toastIn { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: translateY(0);} }
 
+  /* Confetti overlay — fires on every 100th resolved scan */
+  .confetti-overlay {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    overflow: hidden;
+  }
+  .confetti-piece {
+    position: absolute;
+    top: -30px;
+    opacity: 0.95;
+    will-change: transform, opacity;
+    animation: confetti-fall var(--dur, 3s) linear forwards;
+    animation-delay: var(--delay, 0s);
+  }
+  @keyframes confetti-fall {
+    0%   { transform: translate3d(0, -30px, 0) rotate(0deg); opacity: 1; }
+    100% { transform: translate3d(var(--drift, 0), 105vh, 0) rotate(720deg); opacity: 0; }
+  }
+
   /* Misc */
   .mono { font-family: var(--mono); }
   .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
@@ -1238,7 +1258,143 @@ function isLikelyCorsOrNetwork(err) {
          m.includes('network request failed');
 }
 
-function sleep(ms) { return new Promise(res => setTimeout(res, ms)); }
+/* ============================================================
+   SOUNDS & MILESTONE CELEBRATIONS
+   ============================================================
+   All sounds are synthesized via Web Audio so the app stays a
+   single self-contained file (no external audio assets).
+   The AudioContext is created lazily and resumed on the first
+   user gesture, which is how browsers gate audio playback. */
+
+let _audioCtx = null;
+function _ensureAudio() {
+  if (!_audioCtx) {
+    try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch (_) { return null; }
+  }
+  if (_audioCtx.state === 'suspended') _audioCtx.resume().catch(() => {});
+  return _audioCtx;
+}
+
+// Short, low two-tone "thunk" — unobtrusive but distinct from success.
+function playErrorSound() {
+  const ctx = _ensureAudio(); if (!ctx) return;
+  const t0 = ctx.currentTime;
+  [
+    { freq: 220, start: 0.00, dur: 0.09 },
+    { freq: 160, start: 0.09, dur: 0.18 },
+  ].forEach(({ freq, start, dur }) => {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0, t0 + start);
+    g.gain.linearRampToValueAtTime(0.10, t0 + start + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + start + dur);
+    osc.connect(g).connect(ctx.destination);
+    osc.start(t0 + start); osc.stop(t0 + start + dur);
+  });
+}
+
+// Series of band-passed noise bursts — reads as applause.
+function playClapSound() {
+  const ctx = _ensureAudio(); if (!ctx) return;
+  const t0 = ctx.currentTime;
+  const claps = 6;
+  const gap = 0.085;
+
+  for (let i = 0; i < claps; i++) {
+    const start = t0 + i * gap + (Math.random() - 0.5) * 0.015;
+    const bufSize = Math.floor(ctx.sampleRate * 0.06);
+    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let j = 0; j < bufSize; j++) data[j] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 1400 + Math.random() * 400;
+    filter.Q.value = 0.7;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.28 + Math.random() * 0.08, start);
+    g.gain.exponentialRampToValueAtTime(0.001, start + 0.05);
+    src.connect(filter).connect(g).connect(ctx.destination);
+    src.start(start);
+  }
+}
+
+// Ascending C-major fanfare with a sustained top note — celebratory.
+function playPartySound() {
+  const ctx = _ensureAudio(); if (!ctx) return;
+  const t0 = ctx.currentTime;
+  const notes = [
+    { freq: 523.25, time: 0.00, dur: 0.13 }, // C5
+    { freq: 659.25, time: 0.10, dur: 0.13 }, // E5
+    { freq: 783.99, time: 0.20, dur: 0.13 }, // G5
+    { freq: 1046.5, time: 0.30, dur: 0.55 }, // C6
+  ];
+  notes.forEach(({ freq, time, dur }) => {
+    const start = t0 + time;
+    const osc = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const g = ctx.createGain();
+    const harm = ctx.createGain();
+    osc.type = 'triangle';  osc.frequency.value = freq;
+    osc2.type = 'sine';     osc2.frequency.value = freq * 2;
+    harm.gain.value = 0.18;
+    g.gain.setValueAtTime(0, start);
+    g.gain.linearRampToValueAtTime(0.16, start + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, start + dur);
+    osc.connect(g);
+    osc2.connect(harm).connect(g);
+    g.connect(ctx.destination);
+    osc.start(start); osc.stop(start + dur);
+    osc2.start(start); osc2.stop(start + dur);
+  });
+}
+
+// Fullscreen confetti. Particles fall with random drift and rotation.
+function launchConfetti(durationMs = 4800) {
+  let overlay = document.getElementById('confetti-overlay');
+  if (overlay) overlay.remove();
+  overlay = document.createElement('div');
+  overlay.id = 'confetti-overlay';
+  overlay.className = 'confetti-overlay';
+  document.body.appendChild(overlay);
+
+  // Crayon Box palette plus a couple of accent hues
+  const colors = ['#F4C842', '#F08FB6', '#7AAFE8', '#5DB07F', '#E4B473', '#D17A55', '#1F3A52'];
+  const N = 160;
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i < N; i++) {
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    const drift = (Math.random() - 0.5) * 280;
+    const delay = Math.random() * 0.8;
+    const dur = 2.6 + Math.random() * 2.4;
+    const w = 6 + Math.random() * 6;
+    const h = 9 + Math.random() * 8;
+    p.style.cssText =
+      `left:${Math.random() * 100}%;` +
+      `background:${colors[i % colors.length]};` +
+      `width:${w}px;height:${h}px;` +
+      `border-radius:${Math.random() < 0.5 ? '2px' : '50%'};` +
+      `--drift:${drift}px;--delay:${delay}s;--dur:${dur}s;`;
+    frag.appendChild(p);
+  }
+  overlay.appendChild(frag);
+  setTimeout(() => overlay.remove(), durationMs);
+}
+
+// Fire the right effect based on the new resolved count.
+// Priority high→low so 100 doesn't also trigger 50 and 25.
+function celebrateResolvedMilestone(newCount) {
+  if (newCount <= 0) return;
+  if (newCount % 100 === 0)      { launchConfetti(); playPartySound(); }
+  else if (newCount % 50 === 0)  { playPartySound(); }
+  else if (newCount % 25 === 0)  { playClapSound(); }
+}
+
+
 
 // Fetch JSON with automatic retry on 429 (rate limit) and 5xx (server error).
 // Honors Retry-After header if present, otherwise exponential backoff.
@@ -1549,6 +1705,16 @@ async function startLookup(rowId) {
   rerenderRow(row.id, { flash: row.status === STATUS.RESOLVED });
   updateCounters();
   updateUnresolvedPanel();
+
+  // Audible + visual feedback so the librarian can keep scanning without
+  // watching the screen. Error sound on any failure; clap / fanfare / confetti
+  // on resolution milestones.
+  if (row.status === STATUS.FAILED) {
+    playErrorSound();
+  } else if (row.status === STATUS.RESOLVED) {
+    const resolvedNow = state.rows.filter(r => r.status === STATUS.RESOLVED).length;
+    celebrateResolvedMilestone(resolvedNow);
+  }
 }
 
 async function processOfflineQueue() {
@@ -2271,7 +2437,7 @@ function renderIngest() {
             <span class="lbl">scan →</span>
             <input id="scan-isbn"    type="text" placeholder="ISBN" autocomplete="off" inputmode="numeric" />
             <input id="scan-barcode" type="text" placeholder="Local barcode" autocomplete="off" inputmode="numeric" />
-            <div class="hint">Enter to advance · second Enter commits the row</div>
+            <div class="hint">Second scan auto-commits · Enter works too</div>
             <button class="btn btn-sm" data-action="manual-commit">Add row</button>
           </div>
         </div>
@@ -2306,7 +2472,8 @@ function renderIngest() {
         <div class="panel">
           <div class="panel-head"><h3>How scanning works</h3></div>
           <div class="panel-body" style="font-size:12px;color:var(--ink-2);">
-            <p style="margin:0 0 8px;">Scan the ISBN → Enter moves to barcode. Scan the local barcode → Enter commits the row and starts a lookup.</p>
+            <p style="margin:0 0 8px;">Scan the ISBN → moves to barcode. Scan the local barcode → row auto-commits and a lookup starts. (Manual typing? Press Enter after each field.)</p>
+            <p style="margin:0 0 8px;">A short error tone plays on any failed lookup, so you can keep scanning without watching the screen. Every 25 resolved scans plays applause, every 50 a fanfare, and every 100 also fires confetti.</p>
             <p style="margin:0 0 8px;">Resolved rows turn green. Failed rows can be re-tried automatically when back online, or edited manually.</p>
             <p style="margin:0;">Click the <strong>edit</strong> icon to amend a row before generating MARC.</p>
           </div>
@@ -2448,6 +2615,12 @@ function appendRowToTable(r) {
   tr.setAttribute('data-row-id', r.id);
   tbody.appendChild(tr);
   rerenderRow(r.id);
+  // Keep the most recent row visible — push the scroll container to its bottom.
+  // requestAnimationFrame ensures the new row has been laid out before we measure.
+  requestAnimationFrame(() => {
+    const scroller = document.querySelector('#view-root[data-view="ingest"] .table-scroll');
+    if (scroller) scroller.scrollTop = scroller.scrollHeight;
+  });
 }
 
 function updateCounters() {
@@ -2575,6 +2748,7 @@ function bindIngestEvents() {
   if (!isbnEl || !bcEl) return;
   isbnEl.addEventListener('keydown', onIsbnKey);
   bcEl.addEventListener('keydown', onBarcodeKey);
+  bcEl.addEventListener('input',   onBarcodeInput);
   // Keep ISBN focused if user clicks elsewhere by accident? No — be unintrusive.
 }
 
@@ -2597,8 +2771,33 @@ function onIsbnKey(e) {
 function onBarcodeKey(e) {
   if (e.key === 'Enter' || e.key === 'Tab') {
     e.preventDefault();
+    // Clear any pending burst-driven auto-commit so we don't fire twice.
+    if (_barcodeBurst.timer) { clearTimeout(_barcodeBurst.timer); _barcodeBurst.timer = null; }
     handleManualCommit();
   }
+}
+
+// Auto-commit when the second scan finishes, even if the scanner doesn't
+// emit a trailing Enter. Distinguishes a barcode scanner (a rapid burst of
+// 4+ chars in <250ms) from human typing (slower, single-key inputs).
+const _barcodeBurst = { count: 0, firstAt: 0, timer: null };
+function onBarcodeInput(e) {
+  const now = performance.now();
+  if (now - _barcodeBurst.firstAt > 250) {
+    _barcodeBurst.count = 1;
+    _barcodeBurst.firstAt = now;
+  } else {
+    _barcodeBurst.count++;
+  }
+  if (_barcodeBurst.timer) clearTimeout(_barcodeBurst.timer);
+  _barcodeBurst.timer = setTimeout(() => {
+    const burstChars = _barcodeBurst.count;
+    _barcodeBurst.count = 0; _barcodeBurst.firstAt = 0; _barcodeBurst.timer = null;
+    if (burstChars < 4) return;                       // human typing, wait for Enter
+    const isbn    = $('#scan-isbn')?.value.trim();
+    const barcode = $('#scan-barcode')?.value.trim();
+    if (isbn && barcode) handleManualCommit();
+  }, 140);
 }
 
 async function handleManualCommit() {
