@@ -474,17 +474,13 @@
 /* ============================================================
    Posts loader
    ============================================================
-   Fetches markdown files from /posts/ via the GitHub Contents API,
-   parses their YAML-style frontmatter, sorts by date descending,
-   and renders the most recent into the Updates list.
+   Reads /posts/index.json (a manifest of {slug, date} entries),
+   sorts by date descending, then fetches each .md file directly
+   from the Pages-served URL. No GitHub API involved — so this
+   works whether the source repo is public or private. */
 
-   The 60-requests/hour anonymous rate limit is per visitor IP, so
-   a low-traffic site (visitor reads a few pages) stays well inside
-   it. If that ever changes, swap in a posts.json manifest. */
-
-const GH_OWNER = 'colorhues';
-const GH_REPO  = 'libraryscience';
-const POSTS_DIR = 'posts';
+const POSTS_DIR = '/posts';
+const MANIFEST_URL = `${POSTS_DIR}/index.json`;
 const MAX_HOMEPAGE_POSTS = 5;
 const EXCERPT_CHARS = 280;
 
@@ -499,33 +495,34 @@ document.getElementById('foot-year').textContent = String(new Date().getFullYear
 (async function loadUpdates() {
   const container = document.getElementById('updates-list');
   try {
-    const listing = await fetch(
-      `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${POSTS_DIR}`,
-      { headers: { 'Accept': 'application/vnd.github+json' } }
-    );
-    if (!listing.ok) throw new Error(`GitHub API returned HTTP ${listing.status}`);
-    const files = await listing.json();
+    const manifestRes = await fetch(MANIFEST_URL, { cache: 'no-cache' });
+    if (!manifestRes.ok) throw new Error(`Manifest returned HTTP ${manifestRes.status}`);
+    const manifest = await manifestRes.json();
 
-    const mdFiles = (Array.isArray(files) ? files : [])
-      .filter(f => f.type === 'file' && /\.md$/i.test(f.name));
+    const entries = (Array.isArray(manifest) ? manifest : [])
+      .filter(e => e && e.slug && e.date);
 
-    if (mdFiles.length === 0) {
+    if (entries.length === 0) {
       container.innerHTML = `<div class="updates-empty">No field notes yet — the first one is coming soon.</div>`;
       return;
     }
 
-    // Fetch each markdown file in parallel; ignore individual failures
+    const sorted = entries
+      .slice()
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, MAX_HOMEPAGE_POSTS);
+
     const posts = await Promise.all(
-      mdFiles.map(async f => {
+      sorted.map(async (entry) => {
         try {
-          const raw = await fetch(f.download_url);
-          if (!raw.ok) return null;
-          const text = await raw.text();
+          const res = await fetch(`${POSTS_DIR}/${encodeURIComponent(entry.slug)}.md`, { cache: 'no-cache' });
+          if (!res.ok) return null;
+          const text = await res.text();
           const parsed = parseFrontmatter(text);
           return {
-            slug: f.name.replace(/\.md$/i, ''),
-            title: parsed.fm.title || f.name,
-            date: parsed.fm.date || '',
+            slug: entry.slug,
+            date: parsed.fm.date || entry.date,
+            title: parsed.fm.title || entry.slug,
             tags: normalizeTags(parsed.fm.tags),
             body: parsed.body,
           };
@@ -533,11 +530,7 @@ document.getElementById('foot-year').textContent = String(new Date().getFullYear
       })
     );
 
-    const ready = posts
-      .filter(Boolean)
-      .filter(p => p.date)
-      .sort((a, b) => b.date.localeCompare(a.date))
-      .slice(0, MAX_HOMEPAGE_POSTS);
+    const ready = posts.filter(Boolean);
 
     if (ready.length === 0) {
       container.innerHTML = `<div class="updates-empty">No field notes yet — the first one is coming soon.</div>`;
