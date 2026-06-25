@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Field notes — libraryscience.ai</title>
+<meta name="description" content="A post from the libraryscience.ai field notes.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+
+<style>
+  :root {
+    --paper-1: #ECE6DA;
+    --paper-2: #FBF7EE;
+    --ink-1: #1C1B18;
+    --ink-2: #4A4742;
+    --ink-3: #807C75;
+    --accent: #1F3A52;
+    --accent-soft: #E4ECF3;
+    --rule: rgba(28, 27, 24, 0.10);
+    --rule-strong: rgba(28, 27, 24, 0.18);
+    --yellow: #F4C842;
+    --pink: #F08FB6;
+    --blue: #7AAFE8;
+    --green: #5DB07F;
+    --radius: 10px;
+    --font-display: 'Manrope', system-ui, -apple-system, sans-serif;
+    --font-body: 'Geist', system-ui, -apple-system, sans-serif;
+    --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper-1);
+    color: var(--ink-1);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  a { color: var(--accent); }
+  a:hover { text-decoration: underline; }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    margin: 0;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+  }
+
+  .mono {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .app { min-height: 100vh; display: flex; flex-direction: column; }
+
+  header.sky {
+    position: sticky; top: 0; z-index: 10;
+    height: 110px;
+    background: linear-gradient(to bottom, #5C8FBF 0%, #A8C6E4 55%, #E8DFB5 100%);
+    display: flex; flex-direction: column; justify-content: flex-end;
+    border-bottom: 1px solid var(--rule);
+  }
+  @media (max-width: 700px) { header.sky { height: 92px; } }
+
+  .nav {
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 12px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    background: linear-gradient(to top, rgba(236,230,218,0.92), rgba(236,230,218,0));
+  }
+  .nav-brand {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--ink-1);
+    letter-spacing: -0.02em;
+    text-decoration: none;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .nav-brand:hover { text-decoration: none; }
+  .nav-brand .tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--ink-2);
+    letter-spacing: 0.06em;
+    font-weight: 500;
+  }
+  .nav-links {
+    display: flex;
+    gap: 22px;
+    font-size: 13px;
+    color: var(--ink-2);
+    align-items: center;
+  }
+  .nav-links a {
+    color: inherit;
+    text-decoration: none;
+    padding: 4px 0;
+  }
+  .nav-links a:hover { color: var(--ink-1); }
+
+  @media (max-width: 640px) {
+    .nav { padding: 10px 18px; }
+    .nav-links { gap: 14px; font-size: 12.5px; }
+  }
+
+  main {
+    flex: 1;
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 36px 28px 60px;
+  }
+  @media (max-width: 640px) { main { padding: 28px 18px 48px; } }
+
+  .post-back {
+    display: inline-block;
+    margin-bottom: 22px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    text-decoration: none;
+  }
+  .post-back:hover { color: var(--ink-1); }
+
+  .post-meta {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .post-meta .date {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+  }
+  .post-tag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+  .tag-tools { color: #6E3C0E; background: rgba(244, 200, 66, 0.22); }
+  .tag-reflection { color: #7A2F4C; background: rgba(240, 143, 182, 0.22); }
+  .tag-cataloging { color: #1F3A52; background: var(--accent-soft); }
+  .tag-default { color: var(--ink-2); background: rgba(28,27,24,0.06); }
+
+  .post-title {
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.18;
+    margin: 0 0 32px;
+    max-width: 680px;
+  }
+  @media (max-width: 640px) { .post-title { font-size: 24px; } }
+
+  .post-body {
+    font-size: 16px;
+    line-height: 1.75;
+    color: var(--ink-1);
+  }
+  .post-body > * { max-width: 680px; }
+  .post-body p { margin: 0 0 1.2em; }
+  .post-body h2 { font-size: 22px; margin: 1.8em 0 0.7em; }
+  .post-body h3 { font-size: 18px; margin: 1.5em 0 0.6em; }
+  .post-body ul, .post-body ol { padding-left: 1.4em; margin: 0 0 1.2em; }
+  .post-body li { margin: 0.3em 0; }
+  .post-body img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius);
+    margin: 1.2em 0;
+    display: block;
+  }
+  .post-body code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+  .post-body pre {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    padding: 16px;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .post-body pre code { background: none; border: none; padding: 0; }
+  .post-body blockquote {
+    border-left: 3px solid var(--rule-strong);
+    margin: 1.4em 0;
+    padding: 0.2em 0 0.2em 1.2em;
+    color: var(--ink-2);
+    font-style: italic;
+  }
+  .post-body hr {
+    border: none;
+    border-top: 1px solid var(--rule);
+    margin: 2em 0;
+  }
+  .post-body a { color: var(--accent); text-decoration: underline; text-decoration-color: rgba(31,58,82,0.3); }
+  .post-body a:hover { text-decoration-color: var(--accent); }
+
+  .post-loading, .post-error, .post-empty {
+    padding: 24px 0;
+    color: var(--ink-3);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .post-error {
+    background: rgba(184, 82, 46, 0.08);
+    border: 1px solid rgba(184, 82, 46, 0.3);
+    border-radius: var(--radius);
+    color: #6A2A12;
+    padding: 18px 22px;
+  }
+
+  footer.foot {
+    border-top: 1px solid var(--rule);
+    padding: 22px 28px;
+    background: var(--paper-1);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+    text-transform: uppercase;
+  }
+  .foot-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .foot a {
+    color: var(--ink-2);
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule-strong);
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="sky">
+    <nav class="nav">
+      <a class="nav-brand" href="/">
+        <span class="tag">001</span>
+        libraryscience.ai
+      </a>
+      <div class="nav-links">
+        <a href="/#about">About</a>
+        <a href="/#updates">Updates</a>
+        <a href="/#tools">Tools</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <a href="/#updates" class="post-back">← Back to field notes</a>
+    <article id="post-article">
+      <div class="post-loading">Loading…</div>
+    </article>
+  </main>
+
+  <footer class="foot">
+    <div class="foot-inner">
+      <span>libraryscience.ai · <span id="foot-year">2026</span></span>
+      <span><a href="https://github.com/colorhues">github.com/colorhues</a></span>
+    </div>
+  </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+<script>
+"use strict";
+
+document.getElementById('foot-year').textContent = String(new Date().getFullYear());
+
+const TAG_CLASSES = {
+  tools: 'tag-tools',
+  reflection: 'tag-reflection',
+  cataloging: 'tag-cataloging',
+};
+
+(async function loadPost() {
+  const article = document.getElementById('post-article');
+  const slug = new URLSearchParams(location.search).get('slug');
+
+  if (!slug) {
+    article.innerHTML = `<div class="post-empty">No post specified. <a href="/#updates">Back to field notes →</a></div>`;
+    return;
+  }
+
+  // Allow only safe slug characters to keep the path clean and bounded.
+  if (!/^[a-z0-9\-_]+$/i.test(slug)) {
+    article.innerHTML = `<div class="post-error">That post URL doesn't look valid. <a href="/#updates">Back to field notes →</a></div>`;
+    return;
+  }
+
+  try {
+    const url = `https://raw.githubusercontent.com/colorhues/libraryscience/main/posts/${encodeURIComponent(slug)}.md`;
+    const r = await fetch(url);
+    if (r.status === 404) {
+      article.innerHTML = `<div class="post-empty">Post not found. <a href="/#updates">Back to field notes →</a></div>`;
+      return;
+    }
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+
+    const text = await r.text();
+    const { fm, body } = parseFrontmatter(text);
+
+    const title = fm.title || slug;
+    const date  = fm.date  || '';
+    const tags  = normalizeTags(fm.tags);
+
+    document.title = `${title} — libraryscience.ai`;
+
+    const tagsHtml = tags.length
+      ? `<span class="post-tag ${tagClass(tags[0])}">${escapeHtml(tags[0])}</span>`
+      : '';
+
+    article.innerHTML = `
+      <div class="post-meta">
+        ${date ? `<span class="date">${escapeHtml(formatDate(date))}</span>` : ''}
+        ${tagsHtml}
+      </div>
+      <h1 class="post-title">${escapeHtml(title)}</h1>
+      <div class="post-body" id="post-body"></div>
+    `;
+
+    // Render markdown. Source is the site author's own repo, so we trust it.
+    document.getElementById('post-body').innerHTML = marked.parse(body, { breaks: false });
+
+  } catch (err) {
+    console.warn('Could not load post:', err);
+    article.innerHTML = `
+      <div class="post-error">
+        <strong>Couldn't load this post.</strong><br>
+        ${escapeHtml(err.message || 'Unknown error')} — try refreshing in a minute.
+      </div>`;
+  }
+})();
+
+function parseFrontmatter(text) {
+  const m = /^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/.exec(text);
+  if (!m) return { fm: {}, body: text };
+  const fm = {};
+  m[1].split(/\r?\n/).forEach(line => {
+    const idx = line.indexOf(':');
+    if (idx < 0) return;
+    const key = line.slice(0, idx).trim();
+    let val = line.slice(idx + 1).trim();
+    val = val.replace(/^["'](.*)["']$/, '$1');
+    fm[key] = val;
+  });
+  return { fm, body: m[2] };
+}
+
+function normalizeTags(raw) {
+  if (!raw) return [];
+  const stripped = String(raw).replace(/^\[|\]$/g, '');
+  return stripped.split(',').map(t => t.trim()).filter(Boolean);
+}
+
+function tagClass(tag) {
+  return TAG_CLASSES[String(tag).toLowerCase()] || 'tag-default';
+}
+
+function formatDate(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m) return iso;
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${parseInt(m[3],10)} ${months[parseInt(m[2],10) - 1]} ${m[1]}`;
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+</script>
+
+</body>
+</html>

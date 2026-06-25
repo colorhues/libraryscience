@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>libraryscience.ai — learning library science from inside an elementary school</title>
+<meta name="description" content="A record of one volunteer's experience contributing to and learning from a primary-school library — field notes, observations, and the small tools built along the way.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+
+<style>
+  :root {
+    --paper-1: #ECE6DA;
+    --paper-2: #FBF7EE;
+    --ink-1: #1C1B18;
+    --ink-2: #4A4742;
+    --ink-3: #807C75;
+    --accent: #1F3A52;
+    --accent-soft: #E4ECF3;
+    --rule: rgba(28, 27, 24, 0.10);
+    --rule-strong: rgba(28, 27, 24, 0.18);
+    --yellow: #F4C842;
+    --pink: #F08FB6;
+    --blue: #7AAFE8;
+    --green: #5DB07F;
+    --radius: 10px;
+    --font-display: 'Manrope', system-ui, -apple-system, sans-serif;
+    --font-body: 'Geist', system-ui, -apple-system, sans-serif;
+    --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper-1);
+    color: var(--ink-1);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  a { color: inherit; }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    margin: 0;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+  }
+
+  .mono {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .app { min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* === Sky header ===================================== */
+  header.sky {
+    position: sticky; top: 0; z-index: 10;
+    height: 140px;
+    background: linear-gradient(to bottom, #5C8FBF 0%, #A8C6E4 55%, #E8DFB5 100%);
+    display: flex; flex-direction: column; justify-content: flex-end;
+    border-bottom: 1px solid var(--rule);
+  }
+  @media (max-width: 700px) { header.sky { height: 110px; } }
+
+  .nav {
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    background: linear-gradient(to top, rgba(236,230,218,0.92), rgba(236,230,218,0));
+  }
+  .nav-brand {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--ink-1);
+    letter-spacing: -0.02em;
+    text-decoration: none;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .nav-brand .tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--ink-2);
+    letter-spacing: 0.06em;
+    font-weight: 500;
+  }
+  .nav-links {
+    display: flex;
+    gap: 22px;
+    font-size: 13px;
+    color: var(--ink-2);
+    align-items: center;
+  }
+  .nav-links a {
+    text-decoration: none;
+    padding: 4px 0;
+    transition: color .15s ease;
+  }
+  .nav-links a:hover { color: var(--ink-1); }
+  .nav-cta {
+    background: var(--accent);
+    color: #fff !important;
+    font-size: 12.5px;
+    padding: 7px 12px !important;
+    border-radius: 6px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background .15s ease;
+  }
+  .nav-cta:hover { background: #16293b; }
+
+  @media (max-width: 640px) {
+    .nav { padding: 12px 18px; flex-wrap: wrap; }
+    .nav-links { gap: 14px; font-size: 12.5px; }
+    .nav-cta { font-size: 12px; padding: 6px 10px !important; }
+  }
+
+  /* === Main column ==================================== */
+  main {
+    flex: 1;
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 28px;
+  }
+  @media (max-width: 640px) { main { padding: 0 18px; } }
+
+  section { padding: 48px 0 36px; }
+  section + section { border-top: 1px solid var(--rule); }
+
+  .section-head { margin-bottom: 22px; }
+  .section-head .mono { margin-bottom: 6px; display: block; }
+  .section-head h2 { font-size: 20px; }
+
+  /* === Hero =========================================== */
+  .hero {
+    padding-top: 56px;
+    padding-bottom: 8px;
+  }
+  .hero-eyebrow {
+    display: flex; gap: 10px; align-items: center;
+    margin-bottom: 18px; flex-wrap: wrap;
+  }
+  .hero-eyebrow .pill {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    padding: 3px 8px;
+    border-radius: 4px;
+    color: var(--ink-2);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .hero h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    max-width: 640px;
+    line-height: 1.18;
+  }
+  @media (max-width: 640px) { .hero h1 { font-size: 26px; } }
+  .hero p {
+    font-size: 15.5px;
+    color: var(--ink-2);
+    max-width: 580px;
+    margin: 0;
+    line-height: 1.6;
+  }
+  .hero-dots {
+    margin-top: 36px;
+    display: flex; gap: 6px;
+  }
+  .hero-dots span {
+    width: 6px; height: 6px; border-radius: 50%;
+  }
+
+  /* === About ========================================== */
+  .about p {
+    font-size: 15px;
+    color: var(--ink-2);
+    max-width: 620px;
+    margin: 0 0 14px;
+    line-height: 1.65;
+  }
+  .about p:last-child { margin-bottom: 0; }
+
+  /* === Updates ======================================== */
+  .updates-list {
+    border-top: 1px solid var(--rule);
+  }
+  .update {
+    padding: 22px 0;
+    border-bottom: 1px solid var(--rule);
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1fr);
+    gap: 22px;
+    cursor: pointer;
+    transition: background .12s ease;
+    text-decoration: none;
+    color: inherit;
+  }
+  .update:hover { background: rgba(28,27,24,0.025); }
+  .update:hover h3 { color: var(--accent); }
+  @media (max-width: 640px) {
+    .update { grid-template-columns: 1fr; gap: 6px; padding: 18px 0; }
+  }
+  .update-date {
+    padding-top: 2px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--ink-3);
+  }
+  .update h3 {
+    font-size: 16px;
+    margin: 0 0 8px;
+    letter-spacing: -0.005em;
+    transition: color .15s ease;
+  }
+  .update p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--ink-2);
+    line-height: 1.6;
+  }
+  .update-tag {
+    display: inline-block;
+    margin-top: 12px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+  .tag-tools { color: #6E3C0E; background: rgba(244, 200, 66, 0.22); }
+  .tag-reflection { color: #7A2F4C; background: rgba(240, 143, 182, 0.22); }
+  .tag-cataloging { color: #1F3A52; background: var(--accent-soft); }
+  .tag-default { color: var(--ink-2); background: rgba(28,27,24,0.06); }
+
+  .updates-empty, .updates-loading {
+    padding: 32px 0;
+    color: var(--ink-3);
+    font-style: italic;
+    font-size: 14px;
+  }
+  .updates-error {
+    padding: 18px 22px;
+    background: rgba(184, 82, 46, 0.08);
+    border: 1px solid rgba(184, 82, 46, 0.3);
+    border-radius: var(--radius);
+    color: #6A2A12;
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+
+  /* === Tools ========================================== */
+  .tool-card {
+    background: var(--paper-2);
+    border: 1px solid var(--rule-strong);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 20px;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+    transition: background .12s ease, border-color .12s ease;
+  }
+  .tool-card:hover {
+    background: var(--paper-1);
+    border-color: var(--accent);
+  }
+  @media (max-width: 640px) {
+    .tool-card { grid-template-columns: 1fr; }
+  }
+  .tool-card h3 { font-size: 17px; margin: 0 0 6px; }
+  .tool-card p {
+    font-size: 14px;
+    color: var(--ink-2);
+    margin: 0 0 12px;
+    line-height: 1.55;
+  }
+  .tool-meta {
+    display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .status-live { display: inline-flex; align-items: center; gap: 6px; }
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+  }
+  .open-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 11px 18px;
+    border-radius: 7px;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--font-body);
+    white-space: nowrap;
+    transition: background .15s ease;
+  }
+  .open-btn:hover { background: #16293b; }
+  @media (max-width: 640px) { .open-btn { width: 100%; } }
+
+  .tool-placeholder {
+    margin-top: 14px;
+    border: 1px dashed var(--rule-strong);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    font-size: 13px;
+    color: var(--ink-3);
+    font-style: italic;
+  }
+
+  /* === Footer ========================================= */
+  footer.foot {
+    border-top: 1px solid var(--rule);
+    padding: 22px 28px;
+    background: var(--paper-1);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    margin-top: 24px;
+  }
+  .foot-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .foot a {
+    color: var(--ink-2);
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule-strong);
+  }
+
+  /* === SR-only ======================================== */
+  .sr-only {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden;
+    clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="sky">
+    <nav class="nav">
+      <a class="nav-brand" href="/">
+        <span class="tag">001</span>
+        libraryscience.ai
+      </a>
+      <div class="nav-links">
+        <a href="#about">About</a>
+        <a href="#updates">Updates</a>
+        <a href="#tools">Tools</a>
+        <a href="/marc-file-creator/" class="nav-cta">Open MARC File Creator</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+
+    <section class="hero">
+      <div class="hero-eyebrow">
+        <span class="pill">A project</span>
+        <span class="mono">est. 2026 · east palo alto, ca</span>
+      </div>
+      <h1>Learning library science from the inside of an elementary school — and seeing what AI can lend to the work.</h1>
+      <p>A record of one volunteer's experience contributing to and learning from a primary-school library. Field notes, observations, and the small tools built along the way.</p>
+      <div class="hero-dots" aria-hidden="true">
+        <span style="background:#F4C842"></span>
+        <span style="background:#F08FB6"></span>
+        <span style="background:#7AAFE8"></span>
+        <span style="background:#5DB07F"></span>
+      </div>
+    </section>
+
+    <section id="about" class="about">
+      <div class="section-head">
+        <span class="mono">002 · About</span>
+        <h2>An experiment in two parts</h2>
+      </div>
+      <p>This site documents what it's like to learn library science as it's practiced in a primary-school educational setting — and to experiment, in parallel, with how AI tools can support the healthy execution of that work.</p>
+      <p>The Updates section carries unfiltered field notes from the experience. The Tools section indexes the small utilities built along the way to make library work go a little smoother for the people doing it.</p>
+    </section>
+
+    <section id="updates" class="updates">
+      <div class="section-head">
+        <span class="mono">003 · Updates</span>
+        <h2>Field notes</h2>
+      </div>
+      <div id="updates-list" class="updates-list">
+        <div class="updates-loading">Loading recent updates…</div>
+      </div>
+    </section>
+
+    <section id="tools" class="tools">
+      <div class="section-head">
+        <span class="mono">004 · Tools</span>
+        <h2>Built for the work</h2>
+      </div>
+
+      <a class="tool-card" href="/marc-file-creator/">
+        <div>
+          <h3>MARC File Creator</h3>
+          <p>Scan an ISBN and a local barcode; the app pulls bibliographic data from Open Library and Google Books and writes a Destiny-ready MARC 21 record. Outputs a .mrc file ready to import.</p>
+          <div class="tool-meta">
+            <span class="status-live"><span class="status-dot"></span>Live</span>
+            <span>Browser-based</span>
+            <span>No install</span>
+          </div>
+        </div>
+        <span class="open-btn" aria-hidden="true">Open →</span>
+      </a>
+
+      <div class="tool-placeholder">More tools as the work calls for them.</div>
+    </section>
+
+  </main>
+
+  <footer class="foot">
+    <div class="foot-inner">
+      <span>libraryscience.ai · <span id="foot-year">2026</span></span>
+      <span><a href="https://github.com/colorhues">github.com/colorhues</a></span>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   Posts loader
+   ============================================================
+   Fetches markdown files from /posts/ via the GitHub Contents API,
+   parses their YAML-style frontmatter, sorts by date descending,
+   and renders the most recent into the Updates list.
+
+   The 60-requests/hour anonymous rate limit is per visitor IP, so
+   a low-traffic site (visitor reads a few pages) stays well inside
+   it. If that ever changes, swap in a posts.json manifest. */
+
+const GH_OWNER = 'colorhues';
+const GH_REPO  = 'libraryscience';
+const POSTS_DIR = 'posts';
+const MAX_HOMEPAGE_POSTS = 5;
+const EXCERPT_CHARS = 280;
+
+const TAG_CLASSES = {
+  tools: 'tag-tools',
+  reflection: 'tag-reflection',
+  cataloging: 'tag-cataloging',
+};
+
+document.getElementById('foot-year').textContent = String(new Date().getFullYear());
+
+(async function loadUpdates() {
+  const container = document.getElementById('updates-list');
+  try {
+    const listing = await fetch(
+      `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${POSTS_DIR}`,
+      { headers: { 'Accept': 'application/vnd.github+json' } }
+    );
+    if (!listing.ok) throw new Error(`GitHub API returned HTTP ${listing.status}`);
+    const files = await listing.json();
+
+    const mdFiles = (Array.isArray(files) ? files : [])
+      .filter(f => f.type === 'file' && /\.md$/i.test(f.name));
+
+    if (mdFiles.length === 0) {
+      container.innerHTML = `<div class="updates-empty">No field notes yet — the first one is coming soon.</div>`;
+      return;
+    }
+
+    // Fetch each markdown file in parallel; ignore individual failures
+    const posts = await Promise.all(
+      mdFiles.map(async f => {
+        try {
+          const raw = await fetch(f.download_url);
+          if (!raw.ok) return null;
+          const text = await raw.text();
+          const parsed = parseFrontmatter(text);
+          return {
+            slug: f.name.replace(/\.md$/i, ''),
+            title: parsed.fm.title || f.name,
+            date: parsed.fm.date || '',
+            tags: normalizeTags(parsed.fm.tags),
+            body: parsed.body,
+          };
+        } catch (_) { return null; }
+      })
+    );
+
+    const ready = posts
+      .filter(Boolean)
+      .filter(p => p.date)
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, MAX_HOMEPAGE_POSTS);
+
+    if (ready.length === 0) {
+      container.innerHTML = `<div class="updates-empty">No field notes yet — the first one is coming soon.</div>`;
+      return;
+    }
+
+    container.innerHTML = ready.map(renderUpdateCard).join('');
+
+  } catch (err) {
+    console.warn('Could not load updates:', err);
+    container.innerHTML = `
+      <div class="updates-error">
+        <strong>Couldn't load recent updates.</strong><br>
+        ${escapeHtml(err.message || 'Unknown error')} — try refreshing in a minute.
+      </div>`;
+  }
+})();
+
+/* ---- helpers --------------------------------------------- */
+
+function parseFrontmatter(text) {
+  // Expects:
+  //   ---
+  //   key: value
+  //   tags: [a, b]
+  //   ---
+  //   body markdown...
+  const m = /^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/.exec(text);
+  if (!m) return { fm: {}, body: text };
+  const fm = {};
+  m[1].split(/\r?\n/).forEach(line => {
+    const idx = line.indexOf(':');
+    if (idx < 0) return;
+    const key = line.slice(0, idx).trim();
+    let val = line.slice(idx + 1).trim();
+    // strip wrapping quotes
+    val = val.replace(/^["'](.*)["']$/, '$1');
+    fm[key] = val;
+  });
+  return { fm, body: m[2] };
+}
+
+function normalizeTags(raw) {
+  if (!raw) return [];
+  // Accept "[a, b]" or "a, b" or "a"
+  const stripped = String(raw).replace(/^\[|\]$/g, '');
+  return stripped.split(',').map(t => t.trim()).filter(Boolean);
+}
+
+function tagClass(tag) {
+  return TAG_CLASSES[String(tag).toLowerCase()] || 'tag-default';
+}
+
+function formatDate(iso) {
+  // "2026-06-17" → "17 Jun 2026"
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m) return iso;
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${parseInt(m[3],10)} ${months[parseInt(m[2],10) - 1]} ${m[1]}`;
+}
+
+function makeExcerpt(body) {
+  // First paragraph only, stripped of markdown markers, capped at EXCERPT_CHARS
+  const firstPara = (body || '').split(/\n\s*\n/)[0] || '';
+  const plain = firstPara
+    .replace(/^#+\s+/gm, '')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/`(.+?)`/g, '$1')
+    .replace(/\[(.+?)\]\(.+?\)/g, '$1')
+    .replace(/!\[(.*?)\]\(.+?\)/g, '')
+    .trim();
+  if (plain.length <= EXCERPT_CHARS) return plain;
+  return plain.slice(0, EXCERPT_CHARS).replace(/\s+\S*$/, '') + '…';
+}
+
+function renderUpdateCard(post) {
+  const tagHtml = post.tags.length
+    ? `<span class="update-tag ${tagClass(post.tags[0])}">${escapeHtml(post.tags[0])}</span>`
+    : '';
+  return `
+    <a class="update" href="/posts/?slug=${encodeURIComponent(post.slug)}">
+      <div class="update-date">${escapeHtml(formatDate(post.date))}</div>
+      <div>
+        <h3>${escapeHtml(post.title)}</h3>
+        <p>${escapeHtml(makeExcerpt(post.body))}</p>
+        ${tagHtml}
+      </div>
+    </a>
+  `;
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+</script>
+
+</body>
+</html>
