@@ -337,8 +337,8 @@ const TAG_CLASSES = {
   }
 
   try {
-    const url = `https://raw.githubusercontent.com/colorhues/libraryscience/main/posts/${encodeURIComponent(slug)}.md`;
-    const r = await fetch(url);
+    const url = `/posts/${encodeURIComponent(slug)}.md`;
+    const r = await fetch(url, { cache: 'no-cache' });
     if (r.status === 404) {
       article.innerHTML = `<div class="post-empty">Post not found. <a href="/#updates">Back to field notes →</a></div>`;
       return;
