@@ -838,6 +838,15 @@
   }
   .job-row-meta code { font-family: var(--mono); font-size: 11px; color: var(--ink-2); }
   .job-row-meta .sep { color: var(--ink-4); }
+  /* Secondary timing line — quieter than the main meta */
+  .job-row-meta-sub {
+    margin-top: 4px;
+    gap: 8px;
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--ink-4);
+    letter-spacing: 0.02em;
+  }
   .job-row-actions {
     display: flex; gap: 6px; flex-shrink: 0;
   }
@@ -981,6 +990,57 @@ function fmtDate(ts) {
   const d = new Date(ts);
   const opts = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
   return d.toLocaleString(undefined, opts);
+}
+
+// Human-readable elapsed time. Returns "—" for missing or sub-second values
+// so the UI can show a clean dash when there isn't enough data yet.
+function formatDuration(ms) {
+  if (ms == null || isNaN(ms) || ms < 1000) return '—';
+  const totalS = Math.round(ms / 1000);
+  if (totalS < 60) return `${totalS}s`;
+  const totalM = Math.floor(totalS / 60);
+  const remS = totalS % 60;
+  if (totalM < 60) {
+    return remS > 0 ? `${totalM}m ${remS}s` : `${totalM}m`;
+  }
+  const h = Math.floor(totalM / 60);
+  const remM = totalM % 60;
+  return remM > 0 ? `${h}h ${remM}m` : `${h}h`;
+}
+
+// Compute session duration and average-time-per-resolved-scan for a group
+// given the row summary. For completed sessions the end of the window is
+// completedAt; for in-progress sessions it's the last scan's createdAt so
+// the timer doesn't drift while the librarian is idle between scans.
+function computeGroupTimings(group, summary) {
+  if (!group || !summary || !summary.firstScanAt) {
+    return { duration: null, perScan: null };
+  }
+  const end = group.completedAt || summary.lastScanAt || null;
+  const duration = end ? (end - summary.firstScanAt) : null;
+  const resolved = summary.resolved || 0;
+  const perScan = (duration && duration > 0 && resolved > 0) ? (duration / resolved) : null;
+  return { duration, perScan };
+}
+
+// Same idea, but for the currently-open group whose rows are in state.rows.
+function computeCurrentGroupTimings() {
+  const rows = state.rows || [];
+  if (rows.length === 0) return { duration: null, perScan: null };
+  let first = Infinity, last = -Infinity, resolved = 0;
+  for (const r of rows) {
+    if (r.createdAt) {
+      if (r.createdAt < first) first = r.createdAt;
+      if (r.createdAt > last)  last  = r.createdAt;
+    }
+    if (r.status === STATUS.RESOLVED || r.status === STATUS.EDITED) resolved++;
+  }
+  if (first === Infinity) return { duration: null, perScan: null };
+  const g = state.currentGroup;
+  const end = (g && g.completedAt) || last;
+  const duration = end - first;
+  const perScan = (duration > 0 && resolved > 0) ? (duration / resolved) : null;
+  return { duration, perScan };
 }
 
 function fmtYYMMDD(ts) {
@@ -1136,12 +1196,21 @@ async function loadGroupSummaries() {
   const allRows = await dbGetAll(APP.STORE_ROWS);
   const counts = {};
   for (const r of allRows) {
-    if (!counts[r.groupId]) counts[r.groupId] = { total: 0, resolved: 0, failed: 0, pending: 0 };
+    if (!counts[r.groupId]) {
+      counts[r.groupId] = {
+        total: 0, resolved: 0, failed: 0, pending: 0,
+        firstScanAt: null, lastScanAt: null,
+      };
+    }
     const c = counts[r.groupId];
     c.total++;
     if (r.status === STATUS.RESOLVED || r.status === STATUS.EDITED) c.resolved++;
     else if (r.status === STATUS.FAILED) c.failed++;
     else c.pending++;
+    if (r.createdAt) {
+      if (c.firstScanAt === null || r.createdAt < c.firstScanAt) c.firstScanAt = r.createdAt;
+      if (c.lastScanAt  === null || r.createdAt > c.lastScanAt)  c.lastScanAt  = r.createdAt;
+    }
   }
   state.groupCounts = counts;
 }
@@ -2247,6 +2316,21 @@ function renderHome() {
     if (c.resolved) countParts.push(`${c.resolved} resolved`);
     if (c.failed)   countParts.push(`${c.failed} unresolved`);
     if (c.pending && isPending) countParts.push(`${c.pending} pending`);
+
+    // Secondary timing meta — duration + average per resolved scan.
+    // Rendered only once we have enough data for the numbers to be meaningful.
+    const timings = computeGroupTimings(g, c);
+    const subParts = [];
+    if (timings.duration && timings.duration >= 1000) {
+      subParts.push(`Duration ${formatDuration(timings.duration)}`);
+    }
+    if (timings.perScan && timings.perScan >= 1000) {
+      subParts.push(`${formatDuration(timings.perScan)}/scan`);
+    }
+    const subMetaHtml = subParts.length
+      ? `<div class="job-row-meta job-row-meta-sub">${subParts.join(' · ')}</div>`
+      : '';
+
     return `
       <div class="job-row" data-group-id="${escapeHtml(g.id)}">
         <button class="job-row-main" data-action="open-group" data-id="${escapeHtml(g.id)}" aria-label="Open ${escapeHtml(g.name)}">
@@ -2261,6 +2345,7 @@ function renderHome() {
             <span class="sep">·</span>
             <span>${fmtDate(g.createdAt)}</span>
           </div>
+          ${subMetaHtml}
         </button>
         <div class="job-row-actions">
           ${isPending ? `
@@ -2392,6 +2477,13 @@ function renderIngest() {
     state.rows.map(rowHtml).join('') :
     `<tr><td colspan="6" style="padding:32px 16px;text-align:center;color:var(--ink-3);">Scan an ISBN to begin.</td></tr>`;
 
+  // Session timing — minor meta items beside the existing catalog/audience/started spans.
+  const timings = computeCurrentGroupTimings();
+  const durationHtml = (timings.duration && timings.duration >= 1000)
+    ? `<span>Duration ${escapeHtml(formatDuration(timings.duration))}</span>` : '';
+  const perScanHtml = (timings.perScan && timings.perScan >= 1000)
+    ? `<span>${escapeHtml(formatDuration(timings.perScan))}/scan</span>` : '';
+
   return `
     <div class="ingest-head">
       <div class="left">
@@ -2403,6 +2495,8 @@ function renderIngest() {
           <span><code>040 $a ${escapeHtml(g.settings.catalogCode)}</code></span>
           <span>Audience: ${escapeHtml((AUDIENCE_OPTIONS.find(a => a.key === g.settings.audienceKey) || AUDIENCE_OPTIONS[0]).label)}</span>
           <span>Started ${fmtDate(g.createdAt)}</span>
+          ${durationHtml}
+          ${perScanHtml}
           <button class="btn btn-ghost btn-sm" data-action="back-home">← All groups</button>
         </div>
       </div>
