@@ -96,7 +96,7 @@
       `Volunteer: ${toolInput.volunteer_name} (${toolInput.volunteer_email})`,
       toolInput.notes ? `\nNotes for Chris: ${toolInput.notes}` : "",
       "",
-      "Scheduled via Bibi → libraryscience.ai/tools/scheduling.html",
+     "Scheduled via Bibi → libraryscience.ai/scheduling/",
     ].filter(Boolean).join("\n");
 
     const params = new URLSearchParams({
