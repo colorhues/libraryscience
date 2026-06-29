@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Schedule a visit · libraryscience.ai</title>
+  <meta name="description" content="Chat with Bibi to schedule a volunteer visit to the Los Robles library.">
+  <style>
+    :root {
+      --ink: #1F1B16;
+      --muted: #5A544D;
+      --cream: #FBF8F2;
+      --parchment: #F4EFE4;
+      --hairline: #D8D2C5;
+      --green: #2F4F3E;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background:
+        linear-gradient(180deg, #C9DCE8 0%, #E7EEF2 35%, #FBF8F2 100%) no-repeat;
+      min-height: 100vh;
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+    .page {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 56px 24px 96px;
+    }
+    .back {
+      font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+      font-size: 12px;
+      color: var(--muted);
+      text-decoration: none;
+      letter-spacing: 0.04em;
+    }
+    .back:hover { color: var(--ink); }
+    .hero {
+      margin: 28px 0 32px;
+    }
+    .hero .eyebrow {
+      font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      color: var(--green);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .hero h1 {
+      font-size: 36px;
+      line-height: 1.15;
+      margin: 0 0 12px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .hero p {
+      font-size: 16px;
+      line-height: 1.55;
+      color: var(--muted);
+      margin: 0;
+      max-width: 540px;
+    }
+    #bibi-full {
+      margin-top: 24px;
+      box-shadow: 0 12px 32px rgba(31, 27, 22, 0.08);
+    }
+    @media (max-width: 640px) {
+      .page { padding: 32px 16px 64px; }
+      .hero h1 { font-size: 28px; }
+    }
+  </style>
+</head>
+<body data-bibi-no-strip>
+  <div class="page">
+    <a class="back" href="/">← libraryscience.ai</a>
+    <div class="hero">
+      <div class="eyebrow">027.8 · Volunteer scheduling</div>
+      <h1>Find a time to help out at the library.</h1>
+      <p>Chat with Bibi to pick what you'd like to do — read to kids, scan books, sort and label, or help plan an author visit — and a time that works. She'll send you a calendar invite with the details.</p>
+    </div>
+    <div id="bibi-full"></div>
+  </div>
+
+  <script src="/bibi.js" defer></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      window.Bibi.mountFull(document.getElementById("bibi-full"));
+    });
+  </script>
+</body>
+</html>
