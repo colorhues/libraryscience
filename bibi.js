@@ -510,7 +510,7 @@
         </div>
         <div class="lbai-confirm-row">
           <div class="lbai-confirm-key">Where</div>
-          <div class="lbai-confirm-val">Los Robles Magnet Academy, East Palo Alto</div>
+          <div class="lbai-confirm-val">${escapeHtml(event.location || "Los Robles Magnet Academy, 2033 Pulgas Ave, East Palo Alto, CA 94303")}</div>
         </div>
         <a class="lbai-event-link" href="${escapeHtml(event.html_link)}" target="_blank" rel="noopener">View in Google Calendar →</a>
       `;
