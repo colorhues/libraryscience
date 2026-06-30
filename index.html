@@ -453,19 +453,30 @@
   }
 
   /* === Schedule ======================================= */
-  /* Bibi mounted inline as a section. The container has a min-height that
-     gives Bibi enough room to be useful for a conversation; bibi.js manages
-     its own internal scroll if the chat overflows. */
+  /* Bibi mounted inline as a section. Left-aligned with the section's other
+     content (matches how About's paragraphs sit at the left margin). The
+     hairline border matches the section dividers between every section, so
+     this reads as part of the page rather than a floating widget. bibi.js
+     manages its own internal scroll if the chat gets long. */
   #bibi-inline {
     margin-top: 22px;
+    max-width: 640px;
     border-radius: var(--radius);
     overflow: hidden;
-    box-shadow: 0 12px 32px rgba(31, 27, 22, 0.08);
-    min-height: 420px;
+    border: 1px solid var(--rule);
     background: var(--paper-2);
+    min-height: 420px;
   }
-  [data-theme="dark"] #bibi-inline {
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.40);
+  /* Strip any wrapping chrome bibi.js renders inside, and force the inner
+     panel to fill the container — otherwise it centers itself within
+     #bibi-inline and the section looks unbalanced. */
+  #bibi-inline > * {
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
   }
   @media (max-width: 640px) {
     #bibi-inline { min-height: 380px; }
