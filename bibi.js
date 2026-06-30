@@ -1,4 +1,4 @@
-// bibi.js — libraryscience.ai volunteer scheduling assistant (Phase 3)
+// bibi.js — libraryscience.ai volunteer scheduling assistant (Phase 3 + i18n)
 //
 // Drop this file at the root of the site and include with:
 //   <script src="/bibi.js" defer></script>
@@ -7,9 +7,10 @@
 // To opt a page out of the strip (e.g. /scheduling/):
 //   <body data-bibi-no-strip>
 //
-// To mount the full-page chat:
-//   <div id="bibi-full"></div>
-//   <script>document.addEventListener('DOMContentLoaded', () => window.Bibi.mountFull(document.getElementById('bibi-full')));</script>
+// Language: reads `data-lang` from the <html> element (set by the homepage's
+// pre-paint script). Observes attribute changes — if the user toggles
+// language on the homepage, the strip + welcome + quick picks re-render.
+// Sends the current language to the worker so Bibi responds in it.
 
 (function () {
   "use strict";
@@ -24,15 +25,109 @@
     eventKey: "bibi.event.v2",
   };
 
-  const QUICK_PICKS = [
-    { id: "read_to_kids",   text: "I'd like to read to kids." },
-    { id: "scan_books",     text: "I'd like to scan books." },
-    { id: "sort_label",     text: "I'd like to sort and label books." },
-    { id: "author_speaker", text: "I'd like to help plan author or speaker visits." },
-  ];
+  const QUICK_PICK_KEYS = ["read_to_kids", "scan_books", "sort_label", "author_speaker"];
 
-  const WELCOME_TEXT =
-    "Hi! I'm Bibi. I help schedule volunteer visits to the Los Robles library. What sounds good to you today?";
+  // ────────────────────────────────────────────────────────────────────────
+  // i18n
+  // ────────────────────────────────────────────────────────────────────────
+
+  const I18N = {
+    en: {
+      "strip.label":    "Schedule a visit to the library",
+      "strip.hint":     "— chat with Bibi to find a time",
+      "panel.subtitle": "Volunteer scheduling",
+      "panel.minimize": "Minimize",
+
+      "input.placeholder": "Type a message…",
+      "input.send":        "Send",
+      "reset.button":      "Start over",
+      "reset.confirm":     "Start a new conversation with Bibi?",
+
+      "welcome.text": "Hi! I'm Bibi. I help schedule volunteer visits to the Los Robles library. What sounds good to you today?",
+
+      "qp.read_to_kids":   "I'd like to read to kids.",
+      "qp.scan_books":     "I'd like to scan books.",
+      "qp.sort_label":     "I'd like to sort and label books.",
+      "qp.author_speaker": "I'd like to help plan author or speaker visits.",
+
+      "typing.aria":             "Bibi is typing",
+
+      "event.stamp":             "SCHEDULED",
+      "event.title":             "Visit booked",
+      "event.what":              "What",
+      "event.when":              "When",
+      "event.where":             "Where",
+      "event.link":              "View in Google Calendar →",
+      "event.location_fallback": "Los Robles Magnet Academy, 2033 Pulgas Ave, East Palo Alto, CA 94303",
+
+      "error.empty":      "Bibi returned an unexpected response. Try again?",
+      "error.connection": "Couldn't reach Bibi: {err}. Try again in a moment.",
+      "error.prefix":     "Bibi",
+    },
+
+    es: {
+      "strip.label":    "Programa una visita a la biblioteca",
+      "strip.hint":     "— platica con Bibi para encontrar un horario",
+      "panel.subtitle": "Programación de voluntarios",
+      "panel.minimize": "Minimizar",
+
+      "input.placeholder": "Escribe un mensaje…",
+      "input.send":        "Enviar",
+      "reset.button":      "Empezar de nuevo",
+      "reset.confirm":     "¿Empezar una nueva conversación con Bibi?",
+
+      "welcome.text": "¡Hola! Soy Bibi. Te ayudo a programar visitas de voluntarios a la biblioteca Los Robles. ¿Qué te interesa hacer hoy?",
+
+      "qp.read_to_kids":   "Me gustaría leerles a los niños.",
+      "qp.scan_books":     "Me gustaría escanear libros.",
+      "qp.sort_label":     "Me gustaría ordenar y etiquetar libros.",
+      "qp.author_speaker": "Me gustaría ayudar a planear visitas de autores o conferencistas.",
+
+      "typing.aria":             "Bibi está escribiendo",
+
+      "event.stamp":             "PROGRAMADA",
+      "event.title":             "Visita programada",
+      "event.what":              "Qué",
+      "event.when":              "Cuándo",
+      "event.where":             "Dónde",
+      "event.link":              "Ver en Google Calendar →",
+      "event.location_fallback": "Los Robles Magnet Academy, 2033 Pulgas Ave, East Palo Alto, CA 94303",
+
+      "error.empty":      "Bibi devolvió una respuesta inesperada. ¿Intentamos de nuevo?",
+      "error.connection": "No se pudo contactar a Bibi: {err}. Intenta de nuevo en un momento.",
+      "error.prefix":     "Bibi",
+    },
+  };
+
+  function getLang() {
+    const l = (document.documentElement.getAttribute("data-lang") || document.documentElement.lang || "en").toLowerCase();
+    return l === "es" ? "es" : "en";
+  }
+
+  function t(key, vars) {
+    const lang = getLang();
+    let value = (I18N[lang] && I18N[lang][key]) || I18N.en[key] || key;
+    if (vars) {
+      Object.keys(vars).forEach((k) => {
+        value = value.replace("{" + k + "}", vars[k]);
+      });
+    }
+    return value;
+  }
+
+  // Walks a root element and updates any descendants tagged with data-bibi-i18n.
+  function applyTranslations(root) {
+    (root || document).querySelectorAll("[data-bibi-i18n]").forEach((el) => {
+      const key = el.getAttribute("data-bibi-i18n");
+      const value = t(key);
+      const attr = el.getAttribute("data-bibi-i18n-attr");
+      if (attr) {
+        el.setAttribute(attr, value);
+      } else {
+        el.textContent = value;
+      }
+    });
+  }
 
   // ────────────────────────────────────────────────────────────────────────
   // UTILITIES
@@ -61,7 +156,8 @@
   function formatHumanDate(isoString) {
     const d = new Date(isoString);
     if (isNaN(d.getTime())) return isoString;
-    return d.toLocaleString(undefined, {
+    const locale = getLang() === "es" ? "es-MX" : "en-US";
+    return d.toLocaleString(locale, {
       weekday: "long",
       month: "long",
       day: "numeric",
@@ -108,7 +204,11 @@
     const res = await fetch(CONFIG.workerUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages, timezone: getTimezone() }),
+      body: JSON.stringify({
+        messages,
+        timezone: getTimezone(),
+        lang: getLang(),
+      }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -182,6 +282,7 @@
       font-size: 13px;
     }
     .lbai-panel-header .lbai-badge { font-size: 10px; }
+    .lbai-panel-subtitle { font-size: 13px; color: #5A544D; }
     .lbai-panel-header-spacer { flex: 1; }
     .lbai-icon-btn {
       background: none; border: none; cursor: pointer;
@@ -390,6 +491,9 @@
   // CHAT COMPONENT
   // ────────────────────────────────────────────────────────────────────────
 
+  // Track instances so we can notify them on language change
+  const chatInstances = [];
+
   function createChat({ container, isFullPage }) {
     ensureStyles();
     if (isFullPage) container.classList.add("lbai-full");
@@ -399,7 +503,7 @@
       header.className = "lbai-panel-header";
       header.innerHTML = `
         <span class="lbai-badge">027.8 / Bibi</span>
-        <span style="font-size:13px;color:#5A544D">Volunteer scheduling</span>
+        <span class="lbai-panel-subtitle" data-bibi-i18n="panel.subtitle">Volunteer scheduling</span>
       `;
       container.appendChild(header);
     }
@@ -411,8 +515,8 @@
     const inputRow = document.createElement("div");
     inputRow.className = "lbai-input-row";
     inputRow.innerHTML = `
-      <textarea class="lbai-input" rows="1" placeholder="Type a message…"></textarea>
-      <button class="lbai-send" type="button">Send</button>
+      <textarea class="lbai-input" rows="1" data-bibi-i18n="input.placeholder" data-bibi-i18n-attr="placeholder" placeholder="Type a message…"></textarea>
+      <button class="lbai-send" type="button" data-bibi-i18n="input.send">Send</button>
     `;
     container.appendChild(inputRow);
     const inputEl = inputRow.querySelector(".lbai-input");
@@ -420,16 +524,19 @@
 
     const resetEl = document.createElement("div");
     resetEl.className = "lbai-reset";
-    resetEl.innerHTML = `<button type="button">Start over</button>`;
+    resetEl.innerHTML = `<button type="button" data-bibi-i18n="reset.button">Start over</button>`;
     container.appendChild(resetEl);
     resetEl.querySelector("button").addEventListener("click", () => {
-      if (!confirm("Start a new conversation with Bibi?")) return;
+      if (!confirm(t("reset.confirm"))) return;
       clearConversation();
       clearEvent();
       state.messages = [];
       messagesEl.innerHTML = "";
       renderWelcome();
     });
+
+    // Apply translations to anything we just inserted
+    applyTranslations(container);
 
     // State
     const state = {
@@ -462,14 +569,14 @@
     function renderQuickPicks() {
       const wrap = document.createElement("div");
       wrap.className = "lbai-quickpicks";
-      QUICK_PICKS.forEach((qp) => {
+      QUICK_PICK_KEYS.forEach((qpKey) => {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "lbai-quickpick";
-        btn.textContent = qp.text;
+        btn.textContent = t("qp." + qpKey);
         btn.addEventListener("click", () => {
           wrap.remove();
-          sendMessage(qp.text);
+          sendMessage(btn.textContent);
         });
         wrap.appendChild(btn);
       });
@@ -480,7 +587,7 @@
     function renderTyping() {
       const el = document.createElement("div");
       el.className = "lbai-msg lbai-msg-bibi";
-      el.innerHTML = `<span class="lbai-typing" aria-label="Bibi is typing"></span>`;
+      el.innerHTML = `<span class="lbai-typing" aria-label="${escapeHtml(t("typing.aria"))}"></span>`;
       messagesEl.appendChild(el);
       scrollToBottom();
       return el;
@@ -498,47 +605,44 @@
       const card = document.createElement("div");
       card.className = "lbai-event-card";
       card.innerHTML = `
-        <div class="lbai-event-stamp">SCHEDULED</div>
-        <h4>Visit booked</h4>
+        <div class="lbai-event-stamp">${escapeHtml(t("event.stamp"))}</div>
+        <h4>${escapeHtml(t("event.title"))}</h4>
         <div class="lbai-confirm-row">
-          <div class="lbai-confirm-key">What</div>
+          <div class="lbai-confirm-key">${escapeHtml(t("event.what"))}</div>
           <div class="lbai-confirm-val">${escapeHtml(event.activities || event.summary)}</div>
         </div>
         <div class="lbai-confirm-row">
-          <div class="lbai-confirm-key">When</div>
+          <div class="lbai-confirm-key">${escapeHtml(t("event.when"))}</div>
           <div class="lbai-confirm-val">${escapeHtml(formatHumanDate(event.start))}</div>
         </div>
         <div class="lbai-confirm-row">
-          <div class="lbai-confirm-key">Where</div>
-          <div class="lbai-confirm-val">${escapeHtml(event.location || "Los Robles Magnet Academy, 2033 Pulgas Ave, East Palo Alto, CA 94303")}</div>
+          <div class="lbai-confirm-key">${escapeHtml(t("event.where"))}</div>
+          <div class="lbai-confirm-val">${escapeHtml(event.location || t("event.location_fallback"))}</div>
         </div>
-        <a class="lbai-event-link" href="${escapeHtml(event.html_link)}" target="_blank" rel="noopener">View in Google Calendar →</a>
+        <a class="lbai-event-link" href="${escapeHtml(event.html_link)}" target="_blank" rel="noopener">${escapeHtml(t("event.link"))}</a>
       `;
       messagesEl.appendChild(card);
       scrollToBottom();
     }
 
-    // Render a single message from the messages array (used live + on replay)
     function renderMessage(msg) {
       if (msg.role === "user") {
         if (typeof msg.content === "string") {
           renderUserMessage(msg.content);
         }
-        // Skip array content (tool_result blocks) — server-internal
       } else if (msg.role === "assistant") {
         if (Array.isArray(msg.content)) {
           msg.content.forEach((block) => {
             if (block.type === "text" && block.text && block.text.trim()) {
               renderBibiText(block.text);
             }
-            // Skip tool_use blocks — server executed them
           });
         }
       }
     }
 
     function renderWelcome() {
-      renderBibiText(WELCOME_TEXT);
+      renderBibiText(t("welcome.text"));
       renderQuickPicks();
     }
 
@@ -572,31 +676,28 @@
         typingEl.remove();
 
         if (data.error) {
-          renderError(`Bibi: ${data.error}`);
+          renderError(t("error.prefix") + ": " + data.error);
           return;
         }
         if (!data.messages || !Array.isArray(data.messages)) {
-          renderError("Bibi returned an unexpected response. Try again?");
+          renderError(t("error.empty"));
           return;
         }
 
-        // Overwrite history with server's updated version (includes tool blocks)
         state.messages = data.messages;
         saveConversation(state.messages);
 
-        // Render messages added during this turn
         for (let i = previousLength; i < data.messages.length; i++) {
           renderMessage(data.messages[i]);
         }
 
-        // If an event was scheduled this turn, save + render the receipt
         if (data.event) {
           saveEvent(data.event);
           renderEventCard(data.event);
         }
       } catch (err) {
         typingEl.remove();
-        renderError(`Couldn't reach Bibi: ${err.message}. Try again in a moment.`);
+        renderError(t("error.connection", { err: err.message }));
         console.error("[bibi] runTurn error:", err);
       } finally {
         setLoading(false);
@@ -635,7 +736,21 @@
       if (savedEvent) renderEventCard(savedEvent);
     }
 
-    return { focus: () => inputEl.focus() };
+    // Notification hook for language changes from the homepage toggle
+    const instance = {
+      focus: () => inputEl.focus(),
+      onLanguageChange: () => {
+        // Update declarative i18n elements (input placeholder, send, etc.)
+        applyTranslations(container);
+        // If we're still showing the welcome state, redraw it in the new language
+        if (state.messages.length === 0) {
+          messagesEl.innerHTML = "";
+          renderWelcome();
+        }
+      },
+    };
+    chatInstances.push(instance);
+    return instance;
   }
 
   // ────────────────────────────────────────────────────────────────────────
@@ -659,7 +774,9 @@
     strip.innerHTML = `
       <div class="lbai-strip-inner">
         <span class="lbai-badge">027.8 / Bibi</span>
-        <span class="lbai-strip-label"><strong>Schedule a visit to the library</strong><span class="lbai-strip-hint">— chat with Bibi to find a time</span></span>
+        <span class="lbai-strip-label">
+          <strong data-bibi-i18n="strip.label">Schedule a visit to the library</strong><span class="lbai-strip-hint" data-bibi-i18n="strip.hint">— chat with Bibi to find a time</span>
+        </span>
         <svg class="lbai-strip-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6l4 4 4-4"/></svg>
       </div>
     `;
@@ -671,13 +788,17 @@
     panel.innerHTML = `
       <div class="lbai-panel-header">
         <span class="lbai-badge">027.8 / Bibi</span>
-        <span style="font-size:13px;color:#5A544D">Volunteer scheduling</span>
+        <span class="lbai-panel-subtitle" data-bibi-i18n="panel.subtitle">Volunteer scheduling</span>
         <span class="lbai-panel-header-spacer"></span>
-        <button class="lbai-icon-btn" data-action="minimize" title="Minimize">—</button>
+        <button class="lbai-icon-btn" data-action="minimize" data-bibi-i18n="panel.minimize" data-bibi-i18n-attr="title" title="Minimize">—</button>
       </div>
       <div id="lbai-panel-body" style="display:flex;flex-direction:column;flex:1;min-height:0;"></div>
     `;
     document.body.appendChild(panel);
+
+    // Apply translations now that the strip + panel are in the DOM
+    applyTranslations(strip);
+    applyTranslations(panel);
 
     let chat = null;
     let isOpen = false;
@@ -716,6 +837,33 @@
   }
 
   // ────────────────────────────────────────────────────────────────────────
+  // LANGUAGE CHANGE OBSERVER
+  // ────────────────────────────────────────────────────────────────────────
+
+  // When the homepage toggle flips data-lang on <html>, mirror the change
+  // through the strip, panel, input, send button, welcome, and quick picks.
+  let lastObservedLang = getLang();
+  function setupLangObserver() {
+    try {
+      const obs = new MutationObserver(() => {
+        const next = getLang();
+        if (next === lastObservedLang) return;
+        lastObservedLang = next;
+        applyTranslations(document);
+        chatInstances.forEach((c) => {
+          try { c.onLanguageChange(); } catch (e) { console.error("[bibi]", e); }
+        });
+      });
+      obs.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["data-lang", "lang"],
+      });
+    } catch (e) {
+      console.warn("[bibi] MutationObserver not available:", e);
+    }
+  }
+
+  // ────────────────────────────────────────────────────────────────────────
   // PUBLIC API
   // ────────────────────────────────────────────────────────────────────────
 
@@ -734,8 +882,12 @@
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", tryAutoMount);
+    document.addEventListener("DOMContentLoaded", () => {
+      tryAutoMount();
+      setupLangObserver();
+    });
   } else {
     tryAutoMount();
+    setupLangObserver();
   }
 })();
