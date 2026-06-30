@@ -142,7 +142,7 @@
 
   /* === Sky header ===================================== */
   header.sky {
-    position: sticky; top: 44px; z-index: 10;
+    position: sticky; top: 0; z-index: 10;
     height: 140px;
     background: linear-gradient(
       to bottom,
@@ -156,7 +156,6 @@
     transition: background 1s ease;
   }
   @media (max-width: 700px) { header.sky { height: 110px; } }
-  @media (max-width: 640px) { header.sky { top: 48px; } }
 
   .sky-canvas {
     position: absolute; inset: 0;
@@ -453,6 +452,25 @@
     font-style: italic;
   }
 
+  /* === Schedule ======================================= */
+  /* Bibi mounted inline as a section. The container has a min-height that
+     gives Bibi enough room to be useful for a conversation; bibi.js manages
+     its own internal scroll if the chat overflows. */
+  #bibi-inline {
+    margin-top: 22px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: 0 12px 32px rgba(31, 27, 22, 0.08);
+    min-height: 420px;
+    background: var(--paper-2);
+  }
+  [data-theme="dark"] #bibi-inline {
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.40);
+  }
+  @media (max-width: 640px) {
+    #bibi-inline { min-height: 380px; }
+  }
+
   /* === Footer ========================================= */
   footer.foot {
     border-top: 1px solid var(--rule);
@@ -539,7 +557,7 @@
   @media (max-width: 600px) { .theme-toggle .label { display: none; } }
 </style>
 </head>
-<body>
+<body data-bibi-no-strip>
 
 <div class="app">
 
@@ -596,9 +614,17 @@
       <p data-i18n="about.p2">The Updates section carries unfiltered field notes from the experience. The Tools section indexes the small utilities built along the way to make library work go a little smoother for the people doing it.</p>
     </section>
 
+    <section id="schedule" class="schedule">
+      <div class="section-head">
+        <span class="mono" data-i18n="schedule.eyebrow">003 · Schedule</span>
+        <h2 data-i18n="schedule.h2">Schedule a visit</h2>
+      </div>
+      <div id="bibi-inline"></div>
+    </section>
+
     <section id="updates" class="updates">
       <div class="section-head">
-        <span class="mono" data-i18n="updates.eyebrow">003 · Updates</span>
+        <span class="mono" data-i18n="updates.eyebrow">004 · Updates</span>
         <h2 data-i18n="updates.h2">Field notes</h2>
       </div>
       <div id="updates-list" class="updates-list">
@@ -608,7 +634,7 @@
 
     <section id="tools" class="tools">
       <div class="section-head">
-        <span class="mono" data-i18n="tools.eyebrow">004 · Tools</span>
+        <span class="mono" data-i18n="tools.eyebrow">005 · Tools</span>
         <h2 data-i18n="tools.h2">Built for the work</h2>
       </div>
 
@@ -620,19 +646,6 @@
             <span class="status-live"><span class="status-dot"></span><span data-i18n="tools.meta.live">Live</span></span>
             <span data-i18n="tools.meta.browser">Browser-based</span>
             <span data-i18n="tools.meta.noinstall">No install</span>
-          </div>
-        </div>
-        <span class="open-btn" aria-hidden="true" data-i18n="tools.open">Open →</span>
-      </a>
-
-      <a class="tool-card" href="/scheduling/" style="margin-top: 12px;">
-        <div>
-          <h3 data-i18n="tools.bibi.title">Bibi · Volunteer Scheduling</h3>
-          <p data-i18n="tools.bibi.desc">Chat with Bibi to find a time to come help at the library — read to kids, scan books, sort and label, or help plan an author visit. Bibi confirms a slot conversationally and sends a Google Calendar invite with the address and check-in details.</p>
-          <div class="tool-meta">
-            <span class="status-live"><span class="status-dot"></span><span data-i18n="tools.meta.live">Live</span></span>
-            <span data-i18n="tools.meta.conversational">Conversational</span>
-            <span data-i18n="tools.meta.gcal">Google Calendar</span>
           </div>
         </div>
         <span class="open-btn" aria-hidden="true" data-i18n="tools.open">Open →</span>
@@ -867,14 +880,17 @@ const I18N = {
     'about.p1': "This site documents what it's like to learn library science as it's practiced in a primary-school educational setting — and to experiment, in parallel, with how AI tools can support the healthy execution of that work.",
     'about.p2': 'The Updates section carries unfiltered field notes from the experience. The Tools section indexes the small utilities built along the way to make library work go a little smoother for the people doing it.',
 
-    'updates.eyebrow': '003 · Updates',
+    'schedule.eyebrow': '003 · Schedule',
+    'schedule.h2': 'Schedule a visit',
+
+    'updates.eyebrow': '004 · Updates',
     'updates.h2': 'Field notes',
     'updates.loading': 'Loading recent updates…',
     'updates.empty': 'No field notes yet — the first one is coming soon.',
     'updates.error.title': "Couldn't load recent updates.",
     'updates.error.suffix': 'try refreshing in a minute',
 
-    'tools.eyebrow': '004 · Tools',
+    'tools.eyebrow': '005 · Tools',
     'tools.h2': 'Built for the work',
     'tools.marc.title': 'MARC File Creator',
     'tools.marc.desc': 'Scan an ISBN and a local barcode; the app pulls bibliographic data from Open Library and Google Books and writes a Destiny-ready MARC 21 record. Outputs a .mrc file ready to import.',
@@ -915,14 +931,17 @@ const I18N = {
     'about.p1': 'Este sitio documenta cómo es aprender bibliotecología tal como se practica en una escuela primaria — y experimentar, en paralelo, con cómo las herramientas de IA pueden apoyar la práctica saludable de ese trabajo.',
     'about.p2': 'La sección de Actualizaciones reúne los apuntes de campo sin filtrar de la experiencia. La sección de Herramientas indexa las pequeñas utilidades construidas en el camino para que el trabajo bibliotecario sea un poco más fluido para quienes lo hacen.',
 
-    'updates.eyebrow': '003 · Actualizaciones',
+    'schedule.eyebrow': '003 · Visita',
+    'schedule.h2': 'Programa una visita',
+
+    'updates.eyebrow': '004 · Actualizaciones',
     'updates.h2': 'Apuntes de campo',
     'updates.loading': 'Cargando actualizaciones recientes…',
     'updates.empty': 'Todavía no hay apuntes — el primero llega pronto.',
     'updates.error.title': 'No se pudieron cargar las actualizaciones recientes.',
     'updates.error.suffix': 'intenta refrescar en un minuto',
 
-    'tools.eyebrow': '004 · Herramientas',
+    'tools.eyebrow': '005 · Herramientas',
     'tools.h2': 'Hechas para el trabajo',
     'tools.marc.title': 'Creador de archivos MARC',
     'tools.marc.desc': 'Escanea un ISBN y un código de barras local; la aplicación obtiene datos bibliográficos de Open Library y Google Books y genera un registro MARC 21 listo para Destiny. Produce un archivo .mrc listo para importar.',
@@ -1199,6 +1218,16 @@ function escapeHtml(str) {
 </script>
 
 <script src="/bibi.js" defer></script>
+<script>
+  /* Mount Bibi inline into the Schedule section. defer on /bibi.js means
+     window.Bibi is defined by the time DOMContentLoaded fires. */
+  document.addEventListener('DOMContentLoaded', function () {
+    var host = document.getElementById('bibi-inline');
+    if (host && window.Bibi && typeof window.Bibi.mountFull === 'function') {
+      window.Bibi.mountFull(host);
+    }
+  });
+</script>
 
 </body>
 </html>
