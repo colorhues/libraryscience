@@ -66,13 +66,14 @@
 
   /* === Sky header ===================================== */
   header.sky {
-    position: sticky; top: 0; z-index: 10;
+    position: sticky; top: 44px; z-index: 10;
     height: 140px;
     background: linear-gradient(to bottom, #5C8FBF 0%, #A8C6E4 55%, #E8DFB5 100%);
     display: flex; flex-direction: column; justify-content: flex-end;
     border-bottom: 1px solid var(--rule);
   }
   @media (max-width: 700px) { header.sky { height: 110px; } }
+  @media (max-width: 640px) { header.sky { top: 48px; } }
 
   .nav {
     width: 100%;
@@ -453,6 +454,19 @@
         <span class="open-btn" aria-hidden="true">Open →</span>
       </a>
 
+      <a class="tool-card" href="/scheduling/" style="margin-top: 12px;">
+        <div>
+          <h3>Bibi · Volunteer Scheduling</h3>
+          <p>Chat with Bibi to find a time to come help at the library — read to kids, scan books, sort and label, or help plan an author visit. Bibi confirms a slot conversationally and sends a Google Calendar invite with the address and check-in details.</p>
+          <div class="tool-meta">
+            <span class="status-live"><span class="status-dot"></span>Live</span>
+            <span>Conversational</span>
+            <span>Google Calendar</span>
+          </div>
+        </div>
+        <span class="open-btn" aria-hidden="true">Open →</span>
+      </a>
+
       <div class="tool-placeholder">More tools as the work calls for them.</div>
     </section>
 
@@ -631,6 +645,8 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 </script>
+
+<script src="/bibi.js" defer></script>
 
 </body>
 </html>
