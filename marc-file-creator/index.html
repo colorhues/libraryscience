@@ -2692,11 +2692,11 @@ function computeSky(hour) {
     }
   }
   const span = (next.h - prev.h) || 1;
-  const t = Math.max(0, Math.min(1, (hour - prev.h) / span));
+  const frac = Math.max(0, Math.min(1, (hour - prev.h) / span));
 
-  const top     = lerpHex(prev.top,     next.top,     t);
-  const mid     = lerpHex(prev.mid,     next.mid,     t);
-  const horizon = lerpHex(prev.horizon, next.horizon, t);
+  const top     = lerpHex(prev.top,     next.top,     frac);
+  const mid     = lerpHex(prev.mid,     next.mid,     frac);
+  const horizon = lerpHex(prev.horizon, next.horizon, frac);
 
   // Star opacity ramps up between dusk and dawn
   let starOpacity = 0;
