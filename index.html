@@ -453,30 +453,36 @@
   }
 
   /* === Schedule ======================================= */
-  /* Bibi mounted inline as a section. Left-aligned with the section's other
-     content (matches how About's paragraphs sit at the left margin). The
-     hairline border matches the section dividers between every section, so
-     this reads as part of the page rather than a floating widget. bibi.js
-     manages its own internal scroll if the chat gets long. */
+  /* Bibi mounted inline as a section, filling the full section width so it
+     reads as part of the page rather than a centered widget. The hairline
+     border matches the section dividers; bibi.js manages its own internal
+     scroll if the chat gets long. */
   #bibi-inline {
     margin-top: 22px;
-    max-width: 640px;
     border-radius: var(--radius);
     overflow: hidden;
     border: 1px solid var(--rule);
     background: var(--paper-2);
     min-height: 420px;
   }
-  /* Strip any wrapping chrome bibi.js renders inside, and force the inner
-     panel to fill the container — otherwise it centers itself within
-     #bibi-inline and the section looks unbalanced. */
-  #bibi-inline > * {
-    margin: 0 !important;
+  /* Override bibi.js's internal panel chrome at the first two nesting
+     levels: drop its own max-width / margin-auto centering / border / radius
+     so the chat fills our container. Deeper children (message bubbles,
+     buttons) keep their own layout — only the top-level shells flex out. */
+  #bibi-inline > *,
+  #bibi-inline > * > * {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    max-width: none !important;
     width: 100% !important;
-    max-width: 100% !important;
+  }
+  #bibi-inline > * {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
     border: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
+    background: transparent !important;
   }
   @media (max-width: 640px) {
     #bibi-inline { min-height: 380px; }
