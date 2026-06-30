@@ -4,6 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
+<script>
+// Read language preference set by the homepage toggle (same localStorage key).
+// Fall back to navigator.language for direct-arrival users. Runs before paint
+// so the toggle and any static [data-i18n] labels render in the right language.
+(function () {
+  try {
+    var stored = localStorage.getItem("lsai.lang");
+    var lang = stored
+      || ((navigator.language || "en").toLowerCase().indexOf("es") === 0 ? "es" : "en");
+    if (lang !== "en" && lang !== "es") lang = "en";
+    document.documentElement.setAttribute("data-lang", lang);
+    document.documentElement.setAttribute("lang", lang);
+  } catch (e) {
+    document.documentElement.setAttribute("data-lang", "en");
+  }
+})();
+</script>
 <title>Bibliographic Ingest</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -857,6 +874,35 @@
     .job-row-actions { justify-content: flex-end; }
   }
 
+
+  .lang-toggle {
+    display: inline-flex; align-items: center;
+    height: 28px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--sky-chip-bg);
+    border: 1px solid var(--sky-chip-border);
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: .08em; text-transform: uppercase;
+    color: var(--sky-text);
+    gap: 2px;
+  }
+  .lang-toggle button {
+    background: none; border: none;
+    padding: 4px 8px;
+    color: var(--sky-text-2);
+    font-family: inherit; font-size: inherit;
+    letter-spacing: inherit;
+    cursor: pointer;
+    border-radius: 999px;
+    transition: color .12s ease, background .12s ease;
+  }
+  .lang-toggle button:hover { color: var(--sky-text); }
+  .lang-toggle button.active {
+    color: var(--sky-text);
+    background: var(--sky-chip-border);
+  }
+
   /* Mobile compaction */
   @media (max-width: 700px) {
     .col-isbn, .col-bc { width: 110px; font-size: 11px; }
@@ -880,15 +926,19 @@
         <span class="sub" id="brand-sub"></span>
       </a>
       <div class="sky-spacer"></div>
-      <div class="sky-time" id="sky-time" title="Local time">
+      <div class="sky-time" id="sky-time" data-i18n="time.title" data-i18n-attr="title" title="Local time">
         <span class="time-value" id="sky-time-value">—</span>
         <span class="time-phase" id="sky-time-phase">—</span>
       </div>
-      <div class="net-indicator" id="net-indicator" title="Network status">
+      <div class="net-indicator" id="net-indicator" data-i18n="net.title" data-i18n-attr="title" title="Network status">
         <span class="dot"></span>
         <span class="lbl">Online</span>
       </div>
-      <button class="theme-toggle" id="theme-toggle" data-action="cycle-theme" title="Switch theme">
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <button id="lang-en" type="button" data-action="set-lang-en">EN</button>
+        <button id="lang-es" type="button" data-action="set-lang-es">ES</button>
+      </div>
+      <button class="theme-toggle" id="theme-toggle" data-action="cycle-theme" data-i18n="theme.title" data-i18n-attr="title" title="Switch theme">
         <span id="theme-icon"></span>
         <span class="label" id="theme-label">Auto</span>
       </button>
@@ -896,15 +946,10 @@
   </header>
 
   <div id="local-banner" class="local-banner" hidden>
-    <span>
-      <strong>Heads up:</strong> you're running this app from <code>file://</code>.
-      Some browsers block book lookups in this mode. If lookups fail, serve the file via a local web server &mdash; e.g.
-      open a terminal in the folder containing <code>index.html</code> and run <code>python3 -m http.server 8000</code>,
-      then visit <code>http://localhost:8000</code>.
-    </span>
-    <button class="local-banner-dismiss" data-action="dismiss-local-banner" title="Dismiss" aria-label="Dismiss">
+    <span id="local-banner-text"><strong data-i18n="banner.heads_up">Heads up:</strong> <span data-i18n="banner.body">you're running this app from <code>file://</code>. Some browsers block book lookups in this mode. If lookups fail, serve the file via a local web server — e.g. open a terminal in the folder containing <code>index.html</code> and run <code>python3 -m http.server 8000</code>, then visit <code>http://localhost:8000</code>.</span></span>
+    <button class="local-banner-dismiss" data-action="dismiss-local-banner" data-i18n="banner.dismiss" data-i18n-attr="title" data-i18n-aria-attr="aria-label" title="Dismiss" aria-label="Dismiss">
       <span class="x" aria-hidden="true">&times;</span>
-      <span>Dismiss</span>
+      <span data-i18n="banner.dismiss">Dismiss</span>
     </button>
   </div>
 
@@ -915,6 +960,551 @@
 
 <script>
 "use strict";
+
+/* ============================================================
+   I18N
+   ============================================================ */
+
+const I18N = {
+  en: {
+    // Header / brand
+    "online":              "Online",
+    "offline":             "Offline · scans saved",
+    "theme.auto":          "Auto",
+    "theme.light":         "Light",
+    "theme.dark":          "Dark",
+    "theme.title":         "Switch theme",
+    "time.title":          "Local time",
+    "net.title":           "Network status",
+    "toast.theme":         "Theme: {name}",
+
+    // Sky phases
+    "phase.late_night":    "Late night",
+    "phase.pre_dawn":      "Pre-dawn",
+    "phase.dawn":          "Dawn",
+    "phase.morning":       "Morning",
+    "phase.midday":        "Midday",
+    "phase.afternoon":     "Afternoon",
+    "phase.golden_hour":   "Golden hour",
+    "phase.sunset":        "Sunset",
+    "phase.twilight":      "Twilight",
+    "phase.night":         "Night",
+
+    // file:// banner
+    "banner.heads_up":     "Heads up:",
+    "banner.body":         "you're running this app from <code>file://</code>. Some browsers block book lookups in this mode. If lookups fail, serve the file via a local web server — e.g. open a terminal in the folder containing <code>index.html</code> and run <code>python3 -m http.server 8000</code>, then visit <code>http://localhost:8000</code>.",
+    "banner.dismiss":      "Dismiss",
+
+    // Home view
+    "home.hero.title":     "Scan books, get clean MARC.",
+    "home.hero.body":      "An ingestion job is a session of barcoded books. Scan ISBNs and local barcodes; the app looks each one up live and assembles a Destiny-ready <code class=\"mono\">.mrc</code> when you're done.",
+    "home.btn.new":        "Start new ingestion",
+    "home.btn.settings":   "Settings",
+    "home.section.pending":   "Pending",
+    "home.section.complete":  "Complete",
+    "home.empty":          "No ingestion jobs yet. Click <strong>Start new ingestion</strong> to begin.",
+
+    // Job row
+    "job.status.pending":  "Pending",
+    "job.status.complete": "Complete",
+    "job.scanned":         "{n} scanned",
+    "job.resolved":        "{n} resolved",
+    "job.unresolved":      "{n} unresolved",
+    "job.pending":         "{n} pending",
+    "job.duration":        "Duration {dur}",
+    "job.per_scan":        "{dur}/scan",
+    "job.edit":            "Edit",
+    "job.delete":          "Delete",
+    "job.open_aria":       "Open {name}",
+
+    // Setup view
+    "setup.title":         "New ingestion group",
+    "setup.lede":          "These settings apply to every record in this group. You can change them later if needed.",
+    "setup.name":          "Group name",
+    "setup.name_hint":     "(used as the .mrc filename)",
+    "setup.name_ph":       "e.g. {ex}",
+    "setup.cat":           "Cataloging code",
+    "setup.cat_hint":      "Your library's MARC organization code. Identifies who created the record.",
+    "setup.audience":      "Audience level",
+    "aud.juvenile":        "Juvenile",
+    "aud.young_adult":     "Young Adult",
+    "aud.adult":           "Adult",
+    "aud.code":            "code {code}",
+    "setup.fic":           "Default classification when Dewey is missing",
+    "setup.fic.e":         "E (Easy / picture book)",
+    "setup.fic.fic":       "[Fic] (Fiction)",
+    "setup.fic.eg_e":      "e.g. E GLY",
+    "setup.fic.eg_fic":    "e.g. [Fic] GLY",
+    "setup.fic_hint":      "If a Dewey number is found via lookup, it's used instead of this fallback.",
+    "btn.cancel":          "Cancel",
+    "setup.start":         "Start scanning",
+
+    // Ingest view
+    "ingest.rename":       "rename",
+    "ingest.audience":     "Audience: {label}",
+    "ingest.started":      "Started {date}",
+    "ingest.back":         "← All groups",
+    "ingest.col_scanned":  "Scanned",
+    "ingest.col_resolved": "Resolved",
+    "ingest.col_unresolved": "Unresolved",
+    "ingest.th_isbn":      "ISBN",
+    "ingest.th_barcode":   "Barcode",
+    "ingest.th_title":     "Title / Author",
+    "ingest.th_status":    "Status",
+    "ingest.empty":        "Scan an ISBN to begin.",
+    "ingest.scan_lbl":     "scan →",
+    "ingest.scan_isbn_ph": "ISBN",
+    "ingest.scan_bc_ph":   "Local barcode",
+    "ingest.scan_hint":    "Second scan auto-commits · Enter works too",
+    "ingest.scan_add":     "Add row",
+    "ingest.bar_resolved": "<strong>{n}</strong> resolved",
+    "ingest.bar_unresolved": "<strong>{n}</strong> unresolved",
+    "ingest.bar_pending":  "<strong>{n}</strong> pending lookup",
+    "ingest.export_csv":   "Export unresolved CSV",
+    "ingest.complete":     "Complete ingestion group",
+
+    // Sidebar
+    "sb.unresolved":       "Unresolved ISBNs",
+    "sb.unresolved_empty": "No unresolved ISBNs.",
+    "sb.how":              "How scanning works",
+    "sb.how_p1":           "Scan the ISBN → moves to barcode. Scan the local barcode → row auto-commits and a lookup starts. (Manual typing? Press Enter after each field.)",
+    "sb.how_p2":           "A short error tone plays on any failed lookup, so you can keep scanning without watching the screen. Every 25 resolved scans plays applause, every 50 a fanfare, and every 100 also fires confetti.",
+    "sb.how_p3":           "Resolved rows turn green. Failed rows can be re-tried automatically when back online, or edited manually.",
+    "sb.how_p4":           "Click the <strong>edit</strong> icon to amend a row before generating MARC.",
+
+    // Row states
+    "row.awaiting":        "awaiting lookup…",
+    "row.looking_up":      "looking up…",
+    "row.queued_offline":  "queued — offline",
+    "row.lookup_failed":   "lookup failed",
+    "row.no_title":        "(no title)",
+
+    // Status chips
+    "chip.resolved":       "resolved",
+    "chip.edited":         "edited",
+    "chip.looking_up":     "looking up",
+    "chip.offline":        "offline",
+    "chip.queued":         "queued",
+    "chip.failed":         "failed",
+
+    // Unresolved sidebar list
+    "ul.no_isbn":          "(no ISBN)",
+    "ul.pending":          "pending",
+    "ul.edit":             "Edit",
+    "ul.retry":            "Retry",
+
+    // Edit row modal
+    "em.title":            "Edit record",
+    "em.no_barcode":       "(no barcode)",
+    "em.no_isbn":          "(no ISBN)",
+    "btn.close":           "Close",
+    "em.isbn":             "ISBN",
+    "em.barcode":          "Local barcode",
+    "em.title_field":      "Title",
+    "em.authors":          "Authors",
+    "em.authors_hint":     "one per line, \"Last, First\"",
+    "em.publisher":        "Publisher",
+    "em.pubyear":          "Pub year",
+    "em.pages":            "Pages",
+    "em.dimensions":       "Dimensions",
+    "em.dimensions_ph":    "e.g. 27 cm",
+    "em.illustrations":    "Illustrations",
+    "em.ill_color":        "color illustrations (default)",
+    "em.ill_bw":           "black-and-white illustrations",
+    "em.ill_none":         "(no illustrations)",
+    "em.language":         "Language",
+    "em.dewey":            "Dewey number",
+    "em.dewey_ph":         "e.g. 305.9 — leave blank to use fallback",
+    "em.subjects":         "Subjects",
+    "em.subject_ph":       "add subject + Enter",
+    "em.summary":          "Summary",
+    "em.source":           "Source: {source}",
+    "em.source_manual":    "No lookup data — manual entry",
+    "em.save":             "Save changes",
+    "em.remove":           "Remove",
+
+    // Group edit modal
+    "ge.title":            "Edit ingestion job",
+    "ge.name":             "Group name",
+    "ge.name_hint":        "Used as the .mrc filename.",
+    "ge.cat":              "Cataloging code",
+    "ge.audience":         "Audience level",
+    "ge.fic":              "Default classification when Dewey is missing",
+    "ge.fic_hint":         "Changes apply at MARC generation time — including for rows already scanned.",
+
+    // Delete confirmation
+    "dg.title":            "Delete ingestion job?",
+    "dg.body_simple":      "You're about to delete <strong>{name}</strong>.",
+    "dg.body_rows":        "You're about to delete <strong>{name}</strong> along with all <strong>{n}</strong> scanned {rowWord}.",
+    "dg.row":              "row",
+    "dg.rows":             "rows",
+    "dg.warn":             "This action is irreversible and cannot be undone.",
+    "dg.confirm":          "Yes, Please Delete",
+
+    // Settings modal
+    "settings.title":      "Settings",
+    "settings.gbkey":      "Google Books API key (optional)",
+    "settings.gbkey_hint": "Without a key, Google rate-limits unauthenticated lookups aggressively (often after only a handful of rapid requests per IP). With a free key, the quota rises to <strong>1,000 lookups per day</strong>.",
+    "settings.steps":      "To get a key:",
+    "settings.s1":         "Go to <a href=\"https://console.cloud.google.com\" target=\"_blank\" rel=\"noopener\">console.cloud.google.com</a> and sign in.",
+    "settings.s2":         "Create a new project (any name) or pick an existing one.",
+    "settings.s3":         "In the search bar at top, type <em>Books API</em>, open it, and click <strong>Enable</strong>.",
+    "settings.s4":         "Open the left menu → <strong>APIs &amp; Services</strong> → <strong>Credentials</strong>.",
+    "settings.s5":         "Click <strong>+ Create Credentials</strong> → <strong>API key</strong>.",
+    "settings.s6":         "(Recommended) Click <strong>Edit API key</strong> → under <em>Application restrictions</em> set <strong>HTTP referrers</strong>, then add <code>libraryscience.ai/*</code> and <code>*.libraryscience.ai/*</code>.",
+    "settings.s7":         "Copy the key and paste it above.",
+    "settings.privacy":    "The key lives only in your browser's local storage and is sent only to <code>googleapis.com</code>.",
+    "btn.save":            "Save",
+
+    // Complete view
+    "complete.title":      "Ingestion complete",
+    "complete.lede":       "Your MARC file has been downloaded. You can re-download it or export an unresolved-ISBN list below.",
+    "complete.total":      "Total scanned",
+    "complete.in_mrc":     "In .mrc file",
+    "complete.not_in":     "Not in .mrc",
+    "complete.back":       "← Back to all groups",
+    "complete.redl_csv":   "Re-download unresolved CSV",
+    "complete.redl_mrc":   "Re-download .mrc",
+    "complete.filename":   "Filename:",
+
+    // Toasts
+    "toast.invalid_isbn":  "\"{v}\" doesn't look like a valid ISBN — added anyway",
+    "toast.missing_isbn":  "Missing ISBN",
+    "toast.missing_bc":    "Missing local barcode",
+    "toast.cant_save_row": "Could not save row: {err}",
+    "toast.cant_create":   "Could not create group: {err}",
+    "toast.group_not_found": "Group not found",
+    "toast.completed_locked": "Completed jobs can't be edited",
+    "toast.name_empty":    "Name cannot be empty",
+    "toast.saved":         "Saved",
+    "toast.cant_save":     "Could not save: {err}",
+    "toast.cant_save_settings": "Could not save settings: {err}",
+    "toast.api_saved":     "API key saved",
+    "toast.api_cleared":   "API key cleared",
+    "toast.no_resolved":   "No resolved records to export",
+    "toast.mrc_downloaded": "MARC file downloaded",
+    "toast.cant_build":    "Could not build MARC file: {err}",
+    "toast.cant_delete":   "Could not delete: {err}",
+    "toast.job_deleted":   "Ingestion job deleted",
+    "toast.back_online":   "Back online — retrying queued lookups",
+    "toast.offline_saving": "Offline — scans will keep saving",
+
+    // Confirms / prompts
+    "confirm.remove_row":  "Remove row for ISBN {isbn}?",
+    "confirm.complete_anyway": "{n} row(s) are unresolved and won't be in the .mrc file. Complete anyway?",
+    "prompt.group_name":   "Group name:",
+
+    // Lookup errors
+    "err.offline_retry":   "Offline — will retry when connection returns",
+    "err.cant_reach":      "Could not reach lookup services",
+    "err.cant_reach_full": "Could not reach lookup services (network or CORS)",
+    "err.rate_limited":    "Lookup API rate-limited — try again in a few minutes",
+    "err.api_unavailable": "Lookup APIs temporarily unavailable — try again shortly",
+    "err.not_found":       "No record found in Open Library or Google Books",
+    "err.idb":             "Couldn't open local storage: {err}. IndexedDB may be disabled in your browser (private mode in Safari does this).",
+  },
+
+  es: {
+    // Header / brand
+    "online":              "En línea",
+    "offline":             "Sin conexión · escaneos guardados",
+    "theme.auto":          "Auto",
+    "theme.light":         "Claro",
+    "theme.dark":          "Oscuro",
+    "theme.title":         "Cambiar tema",
+    "time.title":          "Hora local",
+    "net.title":           "Estado de la red",
+    "toast.theme":         "Tema: {name}",
+
+    // Sky phases
+    "phase.late_night":    "Madrugada",
+    "phase.pre_dawn":      "Antes del amanecer",
+    "phase.dawn":          "Amanecer",
+    "phase.morning":       "Mañana",
+    "phase.midday":        "Mediodía",
+    "phase.afternoon":     "Tarde",
+    "phase.golden_hour":   "Hora dorada",
+    "phase.sunset":        "Atardecer",
+    "phase.twilight":      "Crepúsculo",
+    "phase.night":         "Noche",
+
+    // file:// banner
+    "banner.heads_up":     "Aviso:",
+    "banner.body":         "estás ejecutando esta app desde <code>file://</code>. Algunos navegadores bloquean las búsquedas de libros en este modo. Si fallan, sirve el archivo desde un servidor local — p. ej. abre una terminal en la carpeta que contiene <code>index.html</code> y ejecuta <code>python3 -m http.server 8000</code>, después visita <code>http://localhost:8000</code>.",
+    "banner.dismiss":      "Cerrar",
+
+    // Home view
+    "home.hero.title":     "Escanea libros, genera MARC limpio.",
+    "home.hero.body":      "Un trabajo de ingreso es una sesión de libros con código de barras. Escanea ISBNs y códigos de barras locales; la app busca cada uno en vivo y arma un archivo <code class=\"mono\">.mrc</code> listo para Destiny cuando termines.",
+    "home.btn.new":        "Empezar un nuevo ingreso",
+    "home.btn.settings":   "Configuración",
+    "home.section.pending":   "En curso",
+    "home.section.complete":  "Completados",
+    "home.empty":          "Aún no hay trabajos de ingreso. Haz clic en <strong>Empezar un nuevo ingreso</strong> para comenzar.",
+
+    // Job row
+    "job.status.pending":  "En curso",
+    "job.status.complete": "Completo",
+    "job.scanned":         "{n} escaneados",
+    "job.resolved":        "{n} resueltos",
+    "job.unresolved":      "{n} sin resolver",
+    "job.pending":         "{n} pendientes",
+    "job.duration":        "Duración {dur}",
+    "job.per_scan":        "{dur}/escaneo",
+    "job.edit":            "Editar",
+    "job.delete":          "Borrar",
+    "job.open_aria":       "Abrir {name}",
+
+    // Setup view
+    "setup.title":         "Nuevo grupo de ingreso",
+    "setup.lede":          "Esta configuración aplica a cada registro del grupo. Puedes cambiarla después si lo necesitas.",
+    "setup.name":          "Nombre del grupo",
+    "setup.name_hint":     "(se usa como nombre del archivo .mrc)",
+    "setup.name_ph":       "p. ej. {ex}",
+    "setup.cat":           "Código de catalogación",
+    "setup.cat_hint":      "El código MARC de tu biblioteca. Identifica quién creó el registro.",
+    "setup.audience":      "Nivel de audiencia",
+    "aud.juvenile":        "Infantil",
+    "aud.young_adult":     "Juvenil",
+    "aud.adult":           "Adulto",
+    "aud.code":            "código {code}",
+    "setup.fic":           "Clasificación por defecto cuando falta Dewey",
+    "setup.fic.e":         "E (lectura inicial / libro ilustrado)",
+    "setup.fic.fic":       "[Fic] (ficción)",
+    "setup.fic.eg_e":      "p. ej. E GLY",
+    "setup.fic.eg_fic":    "p. ej. [Fic] GLY",
+    "setup.fic_hint":      "Si la búsqueda encuentra un número Dewey, ese se usa en vez de este valor por defecto.",
+    "btn.cancel":          "Cancelar",
+    "setup.start":         "Empezar a escanear",
+
+    // Ingest view
+    "ingest.rename":       "renombrar",
+    "ingest.audience":     "Audiencia: {label}",
+    "ingest.started":      "Iniciado {date}",
+    "ingest.back":         "← Todos los grupos",
+    "ingest.col_scanned":  "Escaneados",
+    "ingest.col_resolved": "Resueltos",
+    "ingest.col_unresolved": "Sin resolver",
+    "ingest.th_isbn":      "ISBN",
+    "ingest.th_barcode":   "Código de barras",
+    "ingest.th_title":     "Título / Autor",
+    "ingest.th_status":    "Estado",
+    "ingest.empty":        "Escanea un ISBN para comenzar.",
+    "ingest.scan_lbl":     "escanear →",
+    "ingest.scan_isbn_ph": "ISBN",
+    "ingest.scan_bc_ph":   "Código local",
+    "ingest.scan_hint":    "El segundo escaneo se guarda automáticamente · Enter también funciona",
+    "ingest.scan_add":     "Agregar fila",
+    "ingest.bar_resolved": "<strong>{n}</strong> resueltos",
+    "ingest.bar_unresolved": "<strong>{n}</strong> sin resolver",
+    "ingest.bar_pending":  "<strong>{n}</strong> en búsqueda",
+    "ingest.export_csv":   "Exportar CSV de no resueltos",
+    "ingest.complete":     "Completar grupo de ingreso",
+
+    // Sidebar
+    "sb.unresolved":       "ISBNs sin resolver",
+    "sb.unresolved_empty": "Sin ISBNs sin resolver.",
+    "sb.how":              "Cómo funciona el escaneo",
+    "sb.how_p1":           "Escanea el ISBN → pasa al código de barras. Escanea el código local → la fila se guarda y empieza la búsqueda. (¿Escribes a mano? Presiona Enter después de cada campo.)",
+    "sb.how_p2":           "Suena un tono breve de error en cualquier búsqueda fallida, así puedes seguir escaneando sin mirar la pantalla. Cada 25 escaneos resueltos suena un aplauso, cada 50 una fanfarria, y cada 100 también lanza confeti.",
+    "sb.how_p3":           "Las filas resueltas se ponen verdes. Las filas fallidas pueden reintentarse automáticamente al recuperar conexión, o editarse a mano.",
+    "sb.how_p4":           "Haz clic en el ícono de <strong>editar</strong> para modificar una fila antes de generar el MARC.",
+
+    // Row states
+    "row.awaiting":        "esperando búsqueda…",
+    "row.looking_up":      "buscando…",
+    "row.queued_offline":  "en cola — sin conexión",
+    "row.lookup_failed":   "búsqueda fallida",
+    "row.no_title":        "(sin título)",
+
+    // Status chips
+    "chip.resolved":       "resuelto",
+    "chip.edited":         "editado",
+    "chip.looking_up":     "buscando",
+    "chip.offline":        "sin conexión",
+    "chip.queued":         "en cola",
+    "chip.failed":         "fallido",
+
+    // Unresolved sidebar list
+    "ul.no_isbn":          "(sin ISBN)",
+    "ul.pending":          "pendiente",
+    "ul.edit":             "Editar",
+    "ul.retry":            "Reintentar",
+
+    // Edit row modal
+    "em.title":            "Editar registro",
+    "em.no_barcode":       "(sin código)",
+    "em.no_isbn":          "(sin ISBN)",
+    "btn.close":           "Cerrar",
+    "em.isbn":             "ISBN",
+    "em.barcode":          "Código local",
+    "em.title_field":      "Título",
+    "em.authors":          "Autores",
+    "em.authors_hint":     "uno por línea, \"Apellido, Nombre\"",
+    "em.publisher":        "Editorial",
+    "em.pubyear":          "Año pub.",
+    "em.pages":            "Páginas",
+    "em.dimensions":       "Dimensiones",
+    "em.dimensions_ph":    "p. ej. 27 cm",
+    "em.illustrations":    "Ilustraciones",
+    "em.ill_color":        "ilustraciones a color (por defecto)",
+    "em.ill_bw":           "ilustraciones en blanco y negro",
+    "em.ill_none":         "(sin ilustraciones)",
+    "em.language":         "Idioma",
+    "em.dewey":            "Número Dewey",
+    "em.dewey_ph":         "p. ej. 305.9 — déjalo en blanco para usar el valor por defecto",
+    "em.subjects":         "Temas",
+    "em.subject_ph":       "agregar tema + Enter",
+    "em.summary":          "Resumen",
+    "em.source":           "Fuente: {source}",
+    "em.source_manual":    "Sin datos de búsqueda — entrada manual",
+    "em.save":             "Guardar cambios",
+    "em.remove":           "Quitar",
+
+    // Group edit modal
+    "ge.title":            "Editar trabajo de ingreso",
+    "ge.name":             "Nombre del grupo",
+    "ge.name_hint":        "Se usa como nombre del archivo .mrc.",
+    "ge.cat":              "Código de catalogación",
+    "ge.audience":         "Nivel de audiencia",
+    "ge.fic":              "Clasificación por defecto cuando falta Dewey",
+    "ge.fic_hint":         "Los cambios se aplican al generar el MARC — incluyendo las filas ya escaneadas.",
+
+    // Delete confirmation
+    "dg.title":            "¿Borrar el trabajo de ingreso?",
+    "dg.body_simple":      "Estás a punto de borrar <strong>{name}</strong>.",
+    "dg.body_rows":        "Estás a punto de borrar <strong>{name}</strong> junto con todas las <strong>{n}</strong> {rowWord} escaneadas.",
+    "dg.row":              "fila",
+    "dg.rows":             "filas",
+    "dg.warn":             "Esta acción es irreversible y no se puede deshacer.",
+    "dg.confirm":          "Sí, borrar",
+
+    // Settings modal
+    "settings.title":      "Configuración",
+    "settings.gbkey":      "Llave de API de Google Books (opcional)",
+    "settings.gbkey_hint": "Sin una llave, Google limita las búsquedas no autenticadas de manera agresiva (a menudo después de solo unas pocas peticiones rápidas por IP). Con una llave gratuita, la cuota sube a <strong>1,000 búsquedas por día</strong>.",
+    "settings.steps":      "Para obtener una llave:",
+    "settings.s1":         "Ve a <a href=\"https://console.cloud.google.com\" target=\"_blank\" rel=\"noopener\">console.cloud.google.com</a> e inicia sesión.",
+    "settings.s2":         "Crea un proyecto nuevo (cualquier nombre) o elige uno existente.",
+    "settings.s3":         "En la barra de búsqueda arriba, escribe <em>Books API</em>, ábrelo, y haz clic en <strong>Habilitar</strong>.",
+    "settings.s4":         "Abre el menú de la izquierda → <strong>APIs y servicios</strong> → <strong>Credenciales</strong>.",
+    "settings.s5":         "Haz clic en <strong>+ Crear credenciales</strong> → <strong>Llave de API</strong>.",
+    "settings.s6":         "(Recomendado) Haz clic en <strong>Editar llave de API</strong> → en <em>Restricciones de la aplicación</em> pon <strong>Referentes HTTP</strong>, después agrega <code>libraryscience.ai/*</code> y <code>*.libraryscience.ai/*</code>.",
+    "settings.s7":         "Copia la llave y pégala arriba.",
+    "settings.privacy":    "La llave vive solo en el almacenamiento local de tu navegador y solo se envía a <code>googleapis.com</code>.",
+    "btn.save":            "Guardar",
+
+    // Complete view
+    "complete.title":      "Ingreso completo",
+    "complete.lede":       "Tu archivo MARC ya se descargó. Puedes volver a descargarlo o exportar la lista de ISBNs sin resolver abajo.",
+    "complete.total":      "Total escaneado",
+    "complete.in_mrc":     "En el archivo .mrc",
+    "complete.not_in":     "No están en .mrc",
+    "complete.back":       "← Volver a todos los grupos",
+    "complete.redl_csv":   "Volver a descargar CSV de no resueltos",
+    "complete.redl_mrc":   "Volver a descargar .mrc",
+    "complete.filename":   "Nombre del archivo:",
+
+    // Toasts
+    "toast.invalid_isbn":  "\"{v}\" no parece un ISBN válido — se agregó de todos modos",
+    "toast.missing_isbn":  "Falta el ISBN",
+    "toast.missing_bc":    "Falta el código local",
+    "toast.cant_save_row": "No se pudo guardar la fila: {err}",
+    "toast.cant_create":   "No se pudo crear el grupo: {err}",
+    "toast.group_not_found": "Grupo no encontrado",
+    "toast.completed_locked": "Los trabajos completados no se pueden editar",
+    "toast.name_empty":    "El nombre no puede estar vacío",
+    "toast.saved":         "Guardado",
+    "toast.cant_save":     "No se pudo guardar: {err}",
+    "toast.cant_save_settings": "No se pudo guardar la configuración: {err}",
+    "toast.api_saved":     "Llave de API guardada",
+    "toast.api_cleared":   "Llave de API borrada",
+    "toast.no_resolved":   "No hay registros resueltos para exportar",
+    "toast.mrc_downloaded": "Archivo MARC descargado",
+    "toast.cant_build":    "No se pudo construir el archivo MARC: {err}",
+    "toast.cant_delete":   "No se pudo borrar: {err}",
+    "toast.job_deleted":   "Trabajo de ingreso borrado",
+    "toast.back_online":   "Volvió la conexión — reintentando búsquedas en cola",
+    "toast.offline_saving": "Sin conexión — los escaneos se seguirán guardando",
+
+    // Confirms / prompts
+    "confirm.remove_row":  "¿Quitar la fila del ISBN {isbn}?",
+    "confirm.complete_anyway": "{n} fila(s) sin resolver no estarán en el archivo .mrc. ¿Completar de todos modos?",
+    "prompt.group_name":   "Nombre del grupo:",
+
+    // Lookup errors
+    "err.offline_retry":   "Sin conexión — se reintentará cuando vuelva la conexión",
+    "err.cant_reach":      "No se pudieron contactar los servicios de búsqueda",
+    "err.cant_reach_full": "No se pudieron contactar los servicios de búsqueda (red o CORS)",
+    "err.rate_limited":    "API de búsqueda con límite — vuelve a intentar en unos minutos",
+    "err.api_unavailable": "APIs de búsqueda temporalmente no disponibles — vuelve a intentar pronto",
+    "err.not_found":       "No se encontró registro en Open Library ni en Google Books",
+    "err.idb":             "No se pudo abrir el almacenamiento local: {err}. IndexedDB puede estar desactivado en tu navegador (el modo privado en Safari hace esto).",
+  },
+};
+
+function getLang() {
+  const l = (document.documentElement.getAttribute("data-lang") || document.documentElement.lang || "en").toLowerCase();
+  return l === "es" ? "es" : "en";
+}
+
+function setLang(next) {
+  next = (next === "es") ? "es" : "en";
+  try { localStorage.setItem("lsai.lang", next); } catch (_) {}
+  document.documentElement.setAttribute("data-lang", next);
+  document.documentElement.setAttribute("lang", next);
+}
+
+function t(key, vars) {
+  const lang = getLang();
+  let v = (I18N[lang] && I18N[lang][key]) || I18N.en[key] || key;
+  if (vars) {
+    Object.keys(vars).forEach((k) => {
+      v = v.replace(new RegExp("\\{" + k + "\\}", "g"), vars[k]);
+    });
+  }
+  return v;
+}
+
+// Walk static elements tagged with data-i18n / data-i18n-attr and refresh them.
+function applyTranslations(root) {
+  (root || document).querySelectorAll("[data-i18n]").forEach((el) => {
+    const key = el.getAttribute("data-i18n");
+    const attr = el.getAttribute("data-i18n-attr");
+    const value = t(key);
+    if (attr) el.setAttribute(attr, value);
+    else el.innerHTML = value;
+  });
+}
+
+function updateLangToggleUI() {
+  const en = document.getElementById("lang-en");
+  const es = document.getElementById("lang-es");
+  if (!en || !es) return;
+  const lang = getLang();
+  en.classList.toggle("active", lang === "en");
+  es.classList.toggle("active", lang === "es");
+}
+
+// MutationObserver: when data-lang flips, refresh static labels AND re-render
+// the active view so all the JS template strings flow through t() again.
+(function setupLangObserver() {
+  let lastLang = getLang();
+  try {
+    const obs = new MutationObserver(() => {
+      const next = getLang();
+      if (next === lastLang) return;
+      lastLang = next;
+      applyTranslations(document);
+      updateLangToggleUI();
+      try { updateThemeToggleUI(); } catch (_) {}
+      // Re-render the active view (home / setup / ingest / complete)
+      try { if (typeof render === "function") render(); } catch (e) { console.error(e); }
+    });
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-lang", "lang"] });
+  } catch (e) { console.warn("[i18n]", e); }
+})();
+
 
 /* ============================================================
    CONSTANTS
@@ -989,7 +1579,8 @@ function fmtDate(ts) {
   if (!ts) return '';
   const d = new Date(ts);
   const opts = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-  return d.toLocaleString(undefined, opts);
+  const locale = getLang() === 'es' ? 'es-MX' : undefined;
+  return d.toLocaleString(locale, opts);
 }
 
 // Human-readable elapsed time. Returns "—" for missing or sub-second values
@@ -1703,7 +2294,7 @@ async function lookupIsbn(isbn) {
     /JSONP/i.test(String(err && err.message || ''))
   );
   if (allNetwork) {
-    return { error: 'network', message: 'Could not reach lookup services (network or CORS)' };
+    return { error: 'network', message: t('err.cant_reach_full') };
   }
 
   // API errors — services answered but with 429 / 5xx (transient, not "not found")
@@ -1713,8 +2304,8 @@ async function lookupIsbn(isbn) {
     return {
       error: 'api_unavailable',
       message: rateLimited
-        ? 'Lookup API rate-limited — try again in a few minutes'
-        : 'Lookup APIs temporarily unavailable — try again shortly',
+        ? t('err.rate_limited')
+        : t('err.api_unavailable'),
     };
   }
 
@@ -1731,7 +2322,7 @@ async function startLookup(rowId) {
 
   if (!navigator.onLine) {
     row.status = STATUS.OFFLINE_QUEUED;
-    row.errorMsg = 'Offline — will retry when connection returns';
+    row.errorMsg = t('err.offline_retry');
     await updateRow(row);
     rerenderRow(row.id);
     return;
@@ -1751,18 +2342,18 @@ async function startLookup(rowId) {
 
   if (res.error === 'offline') {
     row.status = STATUS.OFFLINE_QUEUED;
-    row.errorMsg = 'Offline — will retry when connection returns';
+    row.errorMsg = t('err.offline_retry');
   } else if (res.error === 'network') {
     row.status = STATUS.FAILED;
-    row.errorMsg = res.message || 'Could not reach lookup services';
+    row.errorMsg = res.message || t('err.cant_reach');
     row.source = null;
   } else if (res.error === 'api_unavailable') {
     row.status = STATUS.FAILED;
-    row.errorMsg = res.message || 'Lookup APIs temporarily unavailable';
+    row.errorMsg = res.message || t('err.api_unavailable');
     row.source = null;
   } else if (res.error === 'not_found') {
     row.status = STATUS.FAILED;
-    row.errorMsg = 'No record found in Open Library or Google Books';
+    row.errorMsg = t('err.not_found');
     row.source = null;
   } else {
     row.status = STATUS.RESOLVED;
@@ -2053,16 +2644,16 @@ const SKY_KEYFRAMES = [
 ];
 
 const PHASES = [
-  { h: 0,  name: 'Late night' },
-  { h: 4,  name: 'Pre-dawn'   },
-  { h: 6,  name: 'Dawn'       },
-  { h: 8,  name: 'Morning'    },
-  { h: 11, name: 'Midday'     },
-  { h: 14, name: 'Afternoon'  },
-  { h: 17, name: 'Golden hour'},
-  { h: 19, name: 'Sunset'     },
-  { h: 20, name: 'Twilight'   },
-  { h: 22, name: 'Night'      },
+  { h: 0,  key: 'phase.late_night'  },
+  { h: 4,  key: 'phase.pre_dawn'    },
+  { h: 6,  key: 'phase.dawn'        },
+  { h: 8,  key: 'phase.morning'     },
+  { h: 11, key: 'phase.midday'      },
+  { h: 14, key: 'phase.afternoon'   },
+  { h: 17, key: 'phase.golden_hour' },
+  { h: 19, key: 'phase.sunset'      },
+  { h: 20, key: 'phase.twilight'    },
+  { h: 22, key: 'phase.night'       },
 ];
 
 // Hex → {r,g,b}
@@ -2122,9 +2713,9 @@ function computeSky(hour) {
   const chipBorder = textIsDark ? 'rgba(0,0,0,0.16)'   : 'rgba(255,255,255,0.20)';
 
   // Phase name
-  let phaseName = 'Night';
+  let phaseName = t('phase.night');
   for (let i = PHASES.length - 1; i >= 0; i--) {
-    if (hour >= PHASES[i].h) { phaseName = PHASES[i].name; break; }
+    if (hour >= PHASES[i].h) { phaseName = t(PHASES[i].key); break; }
   }
 
   return {
@@ -2151,7 +2742,7 @@ function applySky(s) {
   const tp = document.getElementById('sky-time-phase');
   if (tv) {
     const now = new Date();
-    tv.textContent = now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    tv.textContent = now.toLocaleTimeString(getLang() === 'es' ? 'es-MX' : undefined, { hour: 'numeric', minute: '2-digit' });
   }
   if (tp) tp.textContent = s.phaseName;
 }
@@ -2225,13 +2816,13 @@ function cycleTheme() {
   const pref = getThemePref();
   const next = pref === 'auto' ? 'light' : pref === 'light' ? 'dark' : 'auto';
   setThemePref(next);
-  toast(`Theme: ${next.charAt(0).toUpperCase() + next.slice(1)}`, 'ok', 1400);
+  toast(t('toast.theme', { name: t('theme.' + next) }), 'ok', 1400);
 }
 function updateThemeToggleUI() {
   const pref = getThemePref();
   const icon = document.getElementById('theme-icon');
   const label = document.getElementById('theme-label');
-  if (label) label.textContent = pref.charAt(0).toUpperCase() + pref.slice(1);
+  if (label) label.textContent = t('theme.' + pref);
   if (icon)  icon.innerHTML  = themeIcon(pref);
 }
 function themeIcon(pref) {
@@ -2291,10 +2882,10 @@ function updateNetIndicator() {
   if (!el) return;
   if (state.isOnline) {
     el.classList.remove('offline');
-    el.querySelector('.lbl').textContent = 'Online';
+    el.querySelector('.lbl').textContent = t('online');
   } else {
     el.classList.add('offline');
-    el.querySelector('.lbl').textContent = 'Offline · scans saved';
+    el.querySelector('.lbl').textContent = t('offline');
   }
 }
 
@@ -2309,23 +2900,23 @@ function renderHome() {
     const c = counts[g.id] || { total: 0, resolved: 0, failed: 0, pending: 0 };
     const aud = AUDIENCE_OPTIONS.find(a => a.key === g.settings.audienceKey) || AUDIENCE_OPTIONS[0];
     const statusChip = isPending
-      ? `<span class="status-chip warn"><span class="dot"></span>Pending</span>`
-      : `<span class="status-chip ok"><span class="dot"></span>Complete</span>`;
+      ? `<span class="status-chip warn"><span class="dot"></span>${escapeHtml(t('job.status.pending'))}</span>`
+      : `<span class="status-chip ok"><span class="dot"></span>${escapeHtml(t('job.status.complete'))}</span>`;
     // Counts string — show only what's non-zero, but always show total
-    const countParts = [`${c.total} scanned`];
-    if (c.resolved) countParts.push(`${c.resolved} resolved`);
-    if (c.failed)   countParts.push(`${c.failed} unresolved`);
-    if (c.pending && isPending) countParts.push(`${c.pending} pending`);
+    const countParts = [t('job.scanned', { n: c.total })];
+    if (c.resolved) countParts.push(t('job.resolved',   { n: c.resolved }));
+    if (c.failed)   countParts.push(t('job.unresolved', { n: c.failed }));
+    if (c.pending && isPending) countParts.push(t('job.pending', { n: c.pending }));
 
     // Secondary timing meta — duration + average per resolved scan.
     // Rendered only once we have enough data for the numbers to be meaningful.
     const timings = computeGroupTimings(g, c);
     const subParts = [];
     if (timings.duration && timings.duration >= 1000) {
-      subParts.push(`Duration ${formatDuration(timings.duration)}`);
+      subParts.push(t('job.duration', { dur: formatDuration(timings.duration) }));
     }
     if (timings.perScan && timings.perScan >= 1000) {
-      subParts.push(`${formatDuration(timings.perScan)}/scan`);
+      subParts.push(t('job.per_scan', { dur: formatDuration(timings.perScan) }));
     }
     const subMetaHtml = subParts.length
       ? `<div class="job-row-meta job-row-meta-sub">${subParts.join(' · ')}</div>`
@@ -2333,13 +2924,13 @@ function renderHome() {
 
     return `
       <div class="job-row" data-group-id="${escapeHtml(g.id)}">
-        <button class="job-row-main" data-action="open-group" data-id="${escapeHtml(g.id)}" aria-label="Open ${escapeHtml(g.name)}">
+        <button class="job-row-main" data-action="open-group" data-id="${escapeHtml(g.id)}" aria-label="${escapeHtml(t('job.open_aria', { name: g.name }))}">
           <div class="job-row-title">${escapeHtml(g.name)}</div>
           <div class="job-row-meta">
             ${statusChip}
             <span class="sep">·</span>
             <code>${escapeHtml(g.settings.catalogCode)}</code>
-            <span>${escapeHtml(aud.label)}</span>
+            <span>${escapeHtml(t('aud.' + aud.key))}</span>
             <span class="sep">·</span>
             <span>${countParts.join(' · ')}</span>
             <span class="sep">·</span>
@@ -2349,8 +2940,8 @@ function renderHome() {
         </button>
         <div class="job-row-actions">
           ${isPending ? `
-            <button class="btn btn-sm" data-action="edit-group" data-id="${escapeHtml(g.id)}">Edit</button>
-            <button class="btn btn-sm btn-danger" data-action="delete-group" data-id="${escapeHtml(g.id)}">Delete</button>
+            <button class="btn btn-sm" data-action="edit-group" data-id="${escapeHtml(g.id)}">${escapeHtml(t('job.edit'))}</button>
+            <button class="btn btn-sm btn-danger" data-action="delete-group" data-id="${escapeHtml(g.id)}">${escapeHtml(t('job.delete'))}</button>
           ` : ''}
         </div>
       </div>
@@ -2359,19 +2950,19 @@ function renderHome() {
 
   return `
     <section class="home-hero">
-      <h1>Scan books, get clean MARC.</h1>
-      <p>An ingestion job is a session of barcoded books. Scan ISBNs and local barcodes; the app looks each one up live and assembles a Destiny-ready <code class="mono">.mrc</code> when you're done.</p>
+      <h1>${t('home.hero.title')}</h1>
+      <p>${t('home.hero.body')}</p>
     </section>
     <div class="home-actions">
       <button class="btn btn-primary" data-action="new-group">
         <span class="mono" style="font-size:11px;letter-spacing:.06em;">001</span>
-        Start new ingestion
+        ${escapeHtml(t('home.btn.new'))}
       </button>
-      <button class="btn" data-action="open-settings">Settings</button>
+      <button class="btn" data-action="open-settings">${escapeHtml(t('home.btn.settings'))}</button>
     </div>
     ${inProgress.length ? `
       <div class="home-section-header">
-        <h2>Pending</h2>
+        <h2>${escapeHtml(t('home.section.pending'))}</h2>
         <span class="count">${inProgress.length}</span>
       </div>
       <div class="job-list" style="margin-bottom:28px;">
@@ -2380,14 +2971,14 @@ function renderHome() {
     ` : ''}
     ${completed.length ? `
       <div class="home-section-header">
-        <h2>Complete</h2>
+        <h2>${escapeHtml(t('home.section.complete'))}</h2>
         <span class="count">${completed.length}</span>
       </div>
       <div class="job-list">
         ${completed.map(jobRow).join('')}
       </div>
     ` : (inProgress.length ? '' : `
-      <div class="empty">No ingestion jobs yet. Click <strong>Start new ingestion</strong> to begin.</div>
+      <div class="empty">${t('home.empty')}</div>
     `)}
   `;
 }
@@ -2396,53 +2987,53 @@ function renderSetup() {
   const lastCat = (state.groups[0] && state.groups[0].settings.catalogCode) || 'LRRM';
   return `
     <section class="setup">
-      <h1>New ingestion group</h1>
-      <p class="lede">These settings apply to every record in this group. You can change them later if needed.</p>
+      <h1>${escapeHtml(t('setup.title'))}</h1>
+      <p class="lede">${escapeHtml(t('setup.lede'))}</p>
 
       <div class="field">
-        <label for="setup-name">Group name <span class="hint" style="font-weight:400;color:var(--ink-3);">(used as the .mrc filename)</span></label>
-        <input id="setup-name" type="text" placeholder="e.g. ${escapeHtml(`${lastCat} 2026-06-16 floor cart`)}" />
+        <label for="setup-name">${escapeHtml(t('setup.name'))} <span class="hint" style="font-weight:400;color:var(--ink-3);">${escapeHtml(t('setup.name_hint'))}</span></label>
+        <input id="setup-name" type="text" placeholder="${escapeHtml(t('setup.name_ph', { ex: `${lastCat} 2026-06-16 floor cart` }))}" />
       </div>
 
       <div class="field">
-        <label>Cataloging code <span class="marc-tag">040 $a, $c</span></label>
+        <label>${escapeHtml(t('setup.cat'))} <span class="marc-tag">040 $a, $c</span></label>
         <input id="setup-cat" type="text" value="${escapeHtml(lastCat)}" maxlength="20" />
-        <div class="hint">Your library's MARC organization code. Identifies who created the record.</div>
+        <div class="hint">${escapeHtml(t('setup.cat_hint'))}</div>
       </div>
 
       <div class="field">
-        <label>Audience level <span class="marc-tag">008 / 22</span></label>
+        <label>${escapeHtml(t('setup.audience'))} <span class="marc-tag">008 / 22</span></label>
         <div class="radio-row" id="setup-audience">
           ${AUDIENCE_OPTIONS.map((a, i) => `
             <label class="radio-pill ${i === 0 ? 'selected' : ''}" data-key="${a.key}">
               <input type="radio" name="audience" value="${a.key}" ${i === 0 ? 'checked' : ''} />
-              <span class="label">${a.label}</span>
-              <span class="sub">code ${a.code}</span>
+              <span class="label">${escapeHtml(t('aud.' + a.key))}</span>
+              <span class="sub">${escapeHtml(t('aud.code', { code: a.code }))}</span>
             </label>
           `).join('')}
         </div>
       </div>
 
       <div class="field">
-        <label>Default classification when Dewey is missing <span class="marc-tag">092 $a</span></label>
+        <label>${escapeHtml(t('setup.fic'))} <span class="marc-tag">092 $a</span></label>
         <div class="radio-row" id="setup-fic">
           <label class="radio-pill selected" data-key="E">
             <input type="radio" name="fic" value="E" checked />
-            <span class="label">E (Easy / picture book)</span>
-            <span class="sub">e.g. E GLY</span>
+            <span class="label">${escapeHtml(t('setup.fic.e'))}</span>
+            <span class="sub">${escapeHtml(t('setup.fic.eg_e'))}</span>
           </label>
           <label class="radio-pill" data-key="[Fic]">
             <input type="radio" name="fic" value="[Fic]" />
-            <span class="label">[Fic] (Fiction)</span>
-            <span class="sub">e.g. [Fic] GLY</span>
+            <span class="label">${escapeHtml(t('setup.fic.fic'))}</span>
+            <span class="sub">${escapeHtml(t('setup.fic.eg_fic'))}</span>
           </label>
         </div>
-        <div class="hint">If a Dewey number is found via lookup, it's used instead of this fallback.</div>
+        <div class="hint">${escapeHtml(t('setup.fic_hint'))}</div>
       </div>
 
       <div class="setup-actions">
-        <button class="btn" data-action="cancel-setup">Cancel</button>
-        <button class="btn btn-primary" data-action="create-group">Start scanning</button>
+        <button class="btn" data-action="cancel-setup">${escapeHtml(t('btn.cancel'))}</button>
+        <button class="btn btn-primary" data-action="create-group">${escapeHtml(t('setup.start'))}</button>
       </div>
     </section>
   `;
@@ -2475,35 +3066,35 @@ function renderIngest() {
 
   const tableRows = state.rows.length ?
     state.rows.map(rowHtml).join('') :
-    `<tr><td colspan="6" style="padding:32px 16px;text-align:center;color:var(--ink-3);">Scan an ISBN to begin.</td></tr>`;
+    `<tr><td colspan="6" style="padding:32px 16px;text-align:center;color:var(--ink-3);">${escapeHtml(t('ingest.empty'))}</td></tr>`;
 
   // Session timing — minor meta items beside the existing catalog/audience/started spans.
   const timings = computeCurrentGroupTimings();
   const durationHtml = (timings.duration && timings.duration >= 1000)
-    ? `<span>Duration ${escapeHtml(formatDuration(timings.duration))}</span>` : '';
+    ? `<span>${escapeHtml(t('job.duration', { dur: formatDuration(timings.duration) }))}</span>` : '';
   const perScanHtml = (timings.perScan && timings.perScan >= 1000)
-    ? `<span>${escapeHtml(formatDuration(timings.perScan))}/scan</span>` : '';
+    ? `<span>${escapeHtml(t('job.per_scan', { dur: formatDuration(timings.perScan) }))}</span>` : '';
 
   return `
     <div class="ingest-head">
       <div class="left">
         <h1>
           <span>${escapeHtml(g.name)}</span>
-          <button class="group-name-edit" data-action="rename-group">rename</button>
+          <button class="group-name-edit" data-action="rename-group">${escapeHtml(t('ingest.rename'))}</button>
         </h1>
         <div class="meta">
           <span><code>040 $a ${escapeHtml(g.settings.catalogCode)}</code></span>
-          <span>Audience: ${escapeHtml((AUDIENCE_OPTIONS.find(a => a.key === g.settings.audienceKey) || AUDIENCE_OPTIONS[0]).label)}</span>
-          <span>Started ${fmtDate(g.createdAt)}</span>
+          <span>${escapeHtml(t('ingest.audience', { label: t('aud.' + ((AUDIENCE_OPTIONS.find(a => a.key === g.settings.audienceKey) || AUDIENCE_OPTIONS[0]).key)) }))}</span>
+          <span>${escapeHtml(t('ingest.started', { date: fmtDate(g.createdAt) }))}</span>
           ${durationHtml}
           ${perScanHtml}
-          <button class="btn btn-ghost btn-sm" data-action="back-home">← All groups</button>
+          <button class="btn btn-ghost btn-sm" data-action="back-home">${escapeHtml(t('ingest.back'))}</button>
         </div>
       </div>
       <div class="counters">
-        <div class="counter">       <div class="num">${counts.total}</div>     <div class="lbl">Scanned</div></div>
-        <div class="counter ok">    <div class="num">${counts.resolved}</div>  <div class="lbl">Resolved</div></div>
-        <div class="counter bad">   <div class="num">${counts.failed}</div>    <div class="lbl">Unresolved</div></div>
+        <div class="counter">       <div class="num">${counts.total}</div>     <div class="lbl">${escapeHtml(t('ingest.col_scanned'))}</div></div>
+        <div class="counter ok">    <div class="num">${counts.resolved}</div>  <div class="lbl">${escapeHtml(t('ingest.col_resolved'))}</div></div>
+        <div class="counter bad">   <div class="num">${counts.failed}</div>    <div class="lbl">${escapeHtml(t('ingest.col_unresolved'))}</div></div>
       </div>
     </div>
 
@@ -2515,10 +3106,10 @@ function renderIngest() {
               <thead>
                 <tr>
                   <th class="col-num">#</th>
-                  <th class="col-isbn">ISBN <span class="tag">020 $a</span></th>
-                  <th class="col-bc">Barcode <span class="tag">001 · 852 $p</span></th>
-                  <th class="col-title">Title / Author <span class="tag">245 · 100</span></th>
-                  <th class="col-status">Status</th>
+                  <th class="col-isbn">${escapeHtml(t('ingest.th_isbn'))} <span class="tag">020 $a</span></th>
+                  <th class="col-bc">${escapeHtml(t('ingest.th_barcode'))} <span class="tag">001 · 852 $p</span></th>
+                  <th class="col-title">${escapeHtml(t('ingest.th_title'))} <span class="tag">245 · 100</span></th>
+                  <th class="col-status">${escapeHtml(t('ingest.th_status'))}</th>
                   <th class="col-actions"></th>
                 </tr>
               </thead>
@@ -2528,26 +3119,26 @@ function renderIngest() {
             </table>
           </div>
           <div class="scan-row">
-            <span class="lbl">scan →</span>
-            <input id="scan-isbn"    type="text" placeholder="ISBN" autocomplete="off" inputmode="numeric" />
-            <input id="scan-barcode" type="text" placeholder="Local barcode" autocomplete="off" inputmode="numeric" />
-            <div class="hint">Second scan auto-commits · Enter works too</div>
-            <button class="btn btn-sm" data-action="manual-commit">Add row</button>
+            <span class="lbl">${escapeHtml(t('ingest.scan_lbl'))}</span>
+            <input id="scan-isbn"    type="text" placeholder="${escapeHtml(t('ingest.scan_isbn_ph'))}" autocomplete="off" inputmode="numeric" />
+            <input id="scan-barcode" type="text" placeholder="${escapeHtml(t('ingest.scan_bc_ph'))}" autocomplete="off" inputmode="numeric" />
+            <div class="hint">${escapeHtml(t('ingest.scan_hint'))}</div>
+            <button class="btn btn-sm" data-action="manual-commit">${escapeHtml(t('ingest.scan_add'))}</button>
           </div>
         </div>
 
         <div class="complete-bar">
           <div class="summary">
-            <strong>${counts.resolved}</strong> resolved
-            · <strong>${counts.failed}</strong> unresolved
-            · <strong>${counts.pending}</strong> pending lookup
+            ${t('ingest.bar_resolved', { n: counts.resolved })}
+            · ${t('ingest.bar_unresolved', { n: counts.failed })}
+            · ${t('ingest.bar_pending', { n: counts.pending })}
           </div>
           <div class="actions">
             <button class="btn" data-action="export-unresolved" ${counts.failed === 0 && counts.pending === 0 ? 'disabled' : ''}>
-              Export unresolved CSV
+              ${escapeHtml(t('ingest.export_csv'))}
             </button>
             <button class="btn btn-primary" data-action="complete-group" ${counts.resolved === 0 ? 'disabled' : ''}>
-              Complete ingestion group
+              ${escapeHtml(t('ingest.complete'))}
             </button>
           </div>
         </div>
@@ -2556,7 +3147,7 @@ function renderIngest() {
       <aside class="sidebar">
         <div class="panel" id="unresolved-panel">
           <div class="panel-head">
-            <h3>Unresolved ISBNs</h3>
+            <h3>${escapeHtml(t('sb.unresolved'))}</h3>
             <span class="count" id="unresolved-count" style="font-family:var(--mono);font-size:11px;color:var(--ink-3);">0</span>
           </div>
           <div class="panel-body scroll" id="unresolved-body">
@@ -2564,12 +3155,12 @@ function renderIngest() {
           </div>
         </div>
         <div class="panel">
-          <div class="panel-head"><h3>How scanning works</h3></div>
+          <div class="panel-head"><h3>${escapeHtml(t('sb.how'))}</h3></div>
           <div class="panel-body" style="font-size:12px;color:var(--ink-2);">
-            <p style="margin:0 0 8px;">Scan the ISBN → moves to barcode. Scan the local barcode → row auto-commits and a lookup starts. (Manual typing? Press Enter after each field.)</p>
-            <p style="margin:0 0 8px;">A short error tone plays on any failed lookup, so you can keep scanning without watching the screen. Every 25 resolved scans plays applause, every 50 a fanfare, and every 100 also fires confetti.</p>
-            <p style="margin:0 0 8px;">Resolved rows turn green. Failed rows can be re-tried automatically when back online, or edited manually.</p>
-            <p style="margin:0;">Click the <strong>edit</strong> icon to amend a row before generating MARC.</p>
+            <p style="margin:0 0 8px;">${t('sb.how_p1')}</p>
+            <p style="margin:0 0 8px;">${t('sb.how_p2')}</p>
+            <p style="margin:0 0 8px;">${t('sb.how_p3')}</p>
+            <p style="margin:0;">${t('sb.how_p4')}</p>
           </div>
         </div>
       </aside>
@@ -2578,26 +3169,26 @@ function renderIngest() {
 }
 
 function renderRowTitle(r) {
-  if (r.status === STATUS.PENDING)        return `<span style="color:var(--ink-3);font-style:italic;">awaiting lookup…</span>`;
-  if (r.status === STATUS.LOOKING_UP)     return `<span style="color:var(--ink-3);font-style:italic;">looking up…</span>`;
-  if (r.status === STATUS.OFFLINE_QUEUED) return `<span style="color:var(--ink-3);font-style:italic;">queued — offline</span>`;
-  if (r.status === STATUS.FAILED)         return `<span style="color:var(--bad);">${escapeHtml(r.errorMsg || 'lookup failed')}</span>`;
+  if (r.status === STATUS.PENDING)        return `<span style="color:var(--ink-3);font-style:italic;">${escapeHtml(t('row.awaiting'))}</span>`;
+  if (r.status === STATUS.LOOKING_UP)     return `<span style="color:var(--ink-3);font-style:italic;">${escapeHtml(t('row.looking_up'))}</span>`;
+  if (r.status === STATUS.OFFLINE_QUEUED) return `<span style="color:var(--ink-3);font-style:italic;">${escapeHtml(t('row.queued_offline'))}</span>`;
+  if (r.status === STATUS.FAILED)         return `<span style="color:var(--bad);">${escapeHtml(r.errorMsg || t('row.lookup_failed'))}</span>`;
   if (r.data) {
-    const t = r.data.title || '(no title)';
+    const ti = r.data.title || t('row.no_title');
     const a = (r.data.authors || []).join('; ');
-    return `<div class="title">${escapeHtml(t)}</div>${a ? `<div class="author">${escapeHtml(a)}</div>` : ''}`;
+    return `<div class="title">${escapeHtml(ti)}</div>${a ? `<div class="author">${escapeHtml(a)}</div>` : ''}`;
   }
   return '';
 }
 
 function renderStatusChip(r) {
   switch (r.status) {
-    case STATUS.RESOLVED:        return `<span class="status-chip ok"><span class="dot"></span>resolved</span>`;
-    case STATUS.EDITED:          return `<span class="status-chip ok"><span class="dot"></span>edited</span>`;
-    case STATUS.LOOKING_UP:      return `<span class="status-chip info"><span class="dot"></span>looking up</span>`;
-    case STATUS.OFFLINE_QUEUED:  return `<span class="status-chip warn"><span class="dot"></span>offline</span>`;
-    case STATUS.PENDING:         return `<span class="status-chip warn"><span class="dot"></span>queued</span>`;
-    case STATUS.FAILED:          return `<span class="status-chip bad"><span class="dot"></span>failed</span>`;
+    case STATUS.RESOLVED:        return `<span class="status-chip ok"><span class="dot"></span>${escapeHtml(t('chip.resolved'))}</span>`;
+    case STATUS.EDITED:          return `<span class="status-chip ok"><span class="dot"></span>${escapeHtml(t('chip.edited'))}</span>`;
+    case STATUS.LOOKING_UP:      return `<span class="status-chip info"><span class="dot"></span>${escapeHtml(t('chip.looking_up'))}</span>`;
+    case STATUS.OFFLINE_QUEUED:  return `<span class="status-chip warn"><span class="dot"></span>${escapeHtml(t('chip.offline'))}</span>`;
+    case STATUS.PENDING:         return `<span class="status-chip warn"><span class="dot"></span>${escapeHtml(t('chip.queued'))}</span>`;
+    case STATUS.FAILED:          return `<span class="status-chip bad"><span class="dot"></span>${escapeHtml(t('chip.failed'))}</span>`;
   }
   return '';
 }
@@ -2620,17 +3211,17 @@ function renderUnresolved() {
     r.status === STATUS.LOOKING_UP
   );
   if (!unresolved.length) {
-    return `<div style="color:var(--ink-3);font-size:12px;">No unresolved ISBNs.</div>`;
+    return `<div style="color:var(--ink-3);font-size:12px;">${escapeHtml(t('sb.unresolved_empty'))}</div>`;
   }
   return `<ul class="unresolved-list">${unresolved.map(r => `
     <li>
       <div>
-        <div class="isbn">${escapeHtml(r.isbn || '(no ISBN)')}</div>
-        <div class="err">${escapeHtml(r.errorMsg || 'pending')}</div>
+        <div class="isbn">${escapeHtml(r.isbn || t('ul.no_isbn'))}</div>
+        <div class="err">${escapeHtml(r.errorMsg || t('ul.pending'))}</div>
       </div>
       <div style="display:flex;gap:4px;">
-        <button class="btn btn-sm" data-action="edit-row" data-id="${escapeHtml(r.id)}">Edit</button>
-        ${r.status === STATUS.FAILED ? `<button class="btn btn-sm" data-action="retry-row" data-id="${escapeHtml(r.id)}">Retry</button>` : ''}
+        <button class="btn btn-sm" data-action="edit-row" data-id="${escapeHtml(r.id)}">${escapeHtml(t('ul.edit'))}</button>
+        ${r.status === STATUS.FAILED ? `<button class="btn btn-sm" data-action="retry-row" data-id="${escapeHtml(r.id)}">${escapeHtml(t('ul.retry'))}</button>` : ''}
       </div>
     </li>
   `).join('')}</ul>`;
@@ -2641,22 +3232,22 @@ function renderComplete() {
   const counts = countRows(state.rows);
   return `
     <section class="setup">
-      <h1>Ingestion complete</h1>
-      <p class="lede">Your MARC file has been downloaded. You can re-download it or export an unresolved-ISBN list below.</p>
+      <h1>${escapeHtml(t('complete.title'))}</h1>
+      <p class="lede">${escapeHtml(t('complete.lede'))}</p>
       <div class="counters" style="margin-bottom:20px;">
-        <div class="counter"><div class="num">${counts.total}</div><div class="lbl">Total scanned</div></div>
-        <div class="counter ok"><div class="num">${counts.resolved}</div><div class="lbl">In .mrc file</div></div>
-        <div class="counter bad"><div class="num">${counts.failed + counts.pending}</div><div class="lbl">Not in .mrc</div></div>
+        <div class="counter"><div class="num">${counts.total}</div><div class="lbl">${escapeHtml(t('complete.total'))}</div></div>
+        <div class="counter ok"><div class="num">${counts.resolved}</div><div class="lbl">${escapeHtml(t('complete.in_mrc'))}</div></div>
+        <div class="counter bad"><div class="num">${counts.failed + counts.pending}</div><div class="lbl">${escapeHtml(t('complete.not_in'))}</div></div>
       </div>
       <div class="setup-actions" style="border-top:none;padding-top:0;justify-content:space-between;">
-        <button class="btn" data-action="back-home">← Back to all groups</button>
+        <button class="btn" data-action="back-home">${escapeHtml(t('complete.back'))}</button>
         <div style="display:flex;gap:8px;">
-          <button class="btn" data-action="export-unresolved">Re-download unresolved CSV</button>
-          <button class="btn btn-primary" data-action="redownload-mrc">Re-download .mrc</button>
+          <button class="btn" data-action="export-unresolved">${escapeHtml(t('complete.redl_csv'))}</button>
+          <button class="btn btn-primary" data-action="redownload-mrc">${escapeHtml(t('complete.redl_mrc'))}</button>
         </div>
       </div>
       <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--rule);font-size:12px;color:var(--ink-3);">
-        Filename: <code class="mono" style="color:var(--ink-2);">${escapeHtml(safeFilename(g.name) + '.mrc')}</code>
+        ${escapeHtml(t('complete.filename'))} <code class="mono" style="color:var(--ink-2);">${escapeHtml(safeFilename(g.name) + '.mrc')}</code>
       </div>
     </section>
   `;
@@ -2783,6 +3374,8 @@ document.addEventListener('click', (e) => {
       break;
     }
     case 'cycle-theme': cycleTheme(); break;
+    case 'set-lang-en':  setLang('en'); break;
+    case 'set-lang-es':  setLang('es'); break;
     case 'open-settings':   openSettingsModal(); break;
     case 'save-settings':   handleSaveSettings(); break;
   }
@@ -2822,13 +3415,13 @@ async function handleCreateGroup() {
     setView('ingest');
   } catch (e) {
     console.error(e);
-    toast('Could not create group: ' + e.message, 'bad');
+    toast(t('toast.cant_create', { err: e.message }), 'bad');
   }
 }
 
 async function openGroup(id) {
   const g = state.groups.find(x => x.id === id);
-  if (!g) { toast('Group not found', 'bad'); return; }
+  if (!g) { toast(t('toast.group_not_found'), 'bad'); return; }
   state.currentGroup = g;
   await loadRowsFor(g.id);
   setView('ingest');
@@ -2856,7 +3449,7 @@ function onIsbnKey(e) {
       return;
     }
     if (!looksLikeIsbn(v)) {
-      toast(`"${v}" doesn't look like a valid ISBN — added anyway`, 'warn');
+      toast(t('toast.invalid_isbn', { v: v }), 'warn');
     }
     $('#scan-barcode').focus();
   }
@@ -2898,8 +3491,8 @@ async function handleManualCommit() {
   const isbn    = $('#scan-isbn').value.trim();
   const barcode = $('#scan-barcode').value.trim();
   if (!isbn && !barcode) { $('#scan-isbn').focus(); return; }
-  if (!isbn) { toast('Missing ISBN', 'warn'); $('#scan-isbn').focus(); return; }
-  if (!barcode) { toast('Missing local barcode', 'warn'); $('#scan-barcode').focus(); return; }
+  if (!isbn) { toast(t('toast.missing_isbn'), 'warn'); $('#scan-isbn').focus(); return; }
+  if (!barcode) { toast(t('toast.missing_bc'), 'warn'); $('#scan-barcode').focus(); return; }
 
   try {
     const row = await createRow(state.currentGroup.id, isbn, barcode);
@@ -2915,21 +3508,21 @@ async function handleManualCommit() {
     startLookup(row.id);
   } catch (e) {
     console.error(e);
-    toast('Could not save row: ' + e.message, 'bad');
+    toast(t('toast.cant_save_row', { err: e.message }), 'bad');
   }
 }
 
 async function handleDeleteRow(rowId) {
   const r = state.rows.find(x => x.id === rowId);
   if (!r) return;
-  if (!confirm(`Remove row for ISBN ${r.isbn}?`)) return;
+  if (!confirm(t('confirm.remove_row', { isbn: r.isbn }))) return;
   await deleteRow(rowId);
   state.rows = state.rows.filter(x => x.id !== rowId);
   // Re-render the whole table to fix row numbers
   const tbody = $('#rows-body');
   if (tbody) {
     if (!state.rows.length) {
-      tbody.innerHTML = `<tr><td colspan="6" style="padding:32px 16px;text-align:center;color:var(--ink-3);">Scan an ISBN to begin.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" style="padding:32px 16px;text-align:center;color:var(--ink-3);">${escapeHtml(t('ingest.empty'))}</td></tr>`;
     } else {
       tbody.innerHTML = state.rows.map((r, i) => {
         const cls = `row-${r.status === STATUS.RESOLVED || r.status === STATUS.EDITED ? 'resolved' :
@@ -2956,7 +3549,7 @@ async function handleDeleteRow(rowId) {
 
 async function handleRenameGroup() {
   const g = state.currentGroup;
-  const next = prompt('Group name:', g.name);
+  const next = prompt(t('prompt.group_name'), g.name);
   if (next == null) return;
   const trimmed = next.trim();
   if (!trimmed) return;
@@ -2979,92 +3572,92 @@ function openEditModal(rowId) {
   modal.innerHTML = `
     <div class="modal" role="dialog" aria-modal="true">
       <div class="modal-head">
-        <h2>Edit record</h2>
-        <span class="row-ref">001 ${escapeHtml(r.barcode || '(no barcode)')} · 020 ${escapeHtml(r.isbn || '(no ISBN)')}</span>
-        <button class="btn-icon" data-action="modal-close" title="Close">${iconClose()}</button>
+        <h2>${escapeHtml(t('em.title'))}</h2>
+        <span class="row-ref">001 ${escapeHtml(r.barcode || t('em.no_barcode'))} · 020 ${escapeHtml(r.isbn || t('em.no_isbn'))}</span>
+        <button class="btn-icon" data-action="modal-close" title="${escapeHtml(t('btn.close'))}">${iconClose()}</button>
       </div>
       <div class="modal-body">
         <div class="grid2">
           <div class="field">
-            <label>ISBN <span class="marc-tag">020 $a</span></label>
+            <label>${escapeHtml(t('em.isbn'))} <span class="marc-tag">020 $a</span></label>
             <input id="em-isbn" type="text" value="${escapeHtml(r.isbn || '')}" class="mono" />
           </div>
           <div class="field">
-            <label>Local barcode <span class="marc-tag">001 · 852 $p</span></label>
+            <label>${escapeHtml(t('em.barcode'))} <span class="marc-tag">001 · 852 $p</span></label>
             <input id="em-barcode" type="text" value="${escapeHtml(r.barcode || '')}" class="mono" />
           </div>
         </div>
 
         <div class="field">
-          <label>Title <span class="marc-tag">245 $a</span></label>
+          <label>${escapeHtml(t('em.title_field'))} <span class="marc-tag">245 $a</span></label>
           <input id="em-title" type="text" value="${escapeHtml(d.title || '')}" />
         </div>
 
         <div class="field">
-          <label>Authors <span class="marc-tag">100 $a · 245 $c</span> <span class="hint" style="font-weight:400;">one per line, "Last, First"</span></label>
+          <label>${escapeHtml(t('em.authors'))} <span class="marc-tag">100 $a · 245 $c</span> <span class="hint" style="font-weight:400;">${escapeHtml(t('em.authors_hint'))}</span></label>
           <textarea id="em-authors" rows="2">${escapeHtml((d.authors || []).join('\n'))}</textarea>
         </div>
 
         <div class="grid2">
           <div class="field">
-            <label>Publisher <span class="marc-tag">264 $b</span></label>
+            <label>${escapeHtml(t('em.publisher'))} <span class="marc-tag">264 $b</span></label>
             <input id="em-publisher" type="text" value="${escapeHtml((d.publishers || [])[0] || '')}" />
           </div>
           <div class="field">
-            <label>Pub year <span class="marc-tag">264 $c · 008</span></label>
+            <label>${escapeHtml(t('em.pubyear'))} <span class="marc-tag">264 $c · 008</span></label>
             <input id="em-pubyear" type="text" value="${escapeHtml(d.pubYear || '')}" maxlength="4" />
           </div>
         </div>
 
         <div class="grid2">
           <div class="field">
-            <label>Pages <span class="marc-tag">300 $a</span></label>
+            <label>${escapeHtml(t('em.pages'))} <span class="marc-tag">300 $a</span></label>
             <input id="em-pages" type="number" min="1" value="${d.pages || ''}" />
           </div>
           <div class="field">
-            <label>Dimensions <span class="marc-tag">300 $c</span></label>
-            <input id="em-dimensions" type="text" value="${escapeHtml(d.dimensions || '')}" placeholder="e.g. 27 cm" />
+            <label>${escapeHtml(t('em.dimensions'))} <span class="marc-tag">300 $c</span></label>
+            <input id="em-dimensions" type="text" value="${escapeHtml(d.dimensions || '')}" placeholder="${escapeHtml(t('em.dimensions_ph'))}" />
           </div>
         </div>
 
         <div class="grid2">
           <div class="field">
-            <label>Illustrations <span class="marc-tag">300 $b</span></label>
+            <label>${escapeHtml(t('em.illustrations'))} <span class="marc-tag">300 $b</span></label>
             <select id="em-ill">
-              <option value="">color illustrations (default)</option>
-              <option value="bw" ${d.illustrations === 'bw' ? 'selected' : ''}>black-and-white illustrations</option>
-              <option value="none" ${d.illustrations === 'none' ? 'selected' : ''}>(no illustrations)</option>
+              <option value="">${escapeHtml(t('em.ill_color'))}</option>
+              <option value="bw" ${d.illustrations === 'bw' ? 'selected' : ''}>${escapeHtml(t('em.ill_bw'))}</option>
+              <option value="none" ${d.illustrations === 'none' ? 'selected' : ''}>${escapeHtml(t('em.ill_none'))}</option>
             </select>
           </div>
           <div class="field">
-            <label>Language <span class="marc-tag">008 / 35–37</span></label>
+            <label>${escapeHtml(t('em.language'))} <span class="marc-tag">008 / 35–37</span></label>
             <input id="em-language" type="text" maxlength="3" value="${escapeHtml(d.language || 'eng')}" class="mono" />
           </div>
         </div>
 
         <div class="field">
-          <label>Dewey number <span class="marc-tag">092 $a (numeric part)</span></label>
-          <input id="em-dewey" type="text" value="${escapeHtml(d.dewey || '')}" placeholder="e.g. 305.9 — leave blank to use fallback" />
+          <label>${escapeHtml(t('em.dewey'))} <span class="marc-tag">092 $a (numeric part)</span></label>
+          <input id="em-dewey" type="text" value="${escapeHtml(d.dewey || '')}" placeholder="${escapeHtml(t('em.dewey_ph'))}" />
         </div>
 
         <div class="field">
-          <label>Subjects <span class="marc-tag">650 $a</span></label>
+          <label>${escapeHtml(t('em.subjects'))} <span class="marc-tag">650 $a</span></label>
           <div class="chips" id="em-subjects">
             ${(d.subjects || []).map(s => subjectChipHtml(s)).join('')}
-            <input class="chip-input" id="em-subject-input" placeholder="add subject + Enter" />
+            <input class="chip-input" id="em-subject-input" placeholder="${escapeHtml(t('em.subject_ph'))}" />
           </div>
         </div>
 
         <div class="field">
-          <label>Summary <span class="marc-tag">520 $a</span></label>
+          <label>${escapeHtml(t('em.summary'))} <span class="marc-tag">520 $a</span></label>
           <textarea id="em-summary" rows="3">${escapeHtml(d.summary || '')}</textarea>
         </div>
       </div>
       <div class="modal-foot">
-        <span class="source-note">${r.source ? 'Source: ' + r.source : 'No lookup data — manual entry'}</span>
+        <span class="source-note">${r.source ? escapeHtml(t('em.source', { source: r.source })) : escapeHtml(t('em.source_manual'))}</span>
         <div class="right">
-          <button class="btn" data-action="modal-close">Cancel</button>
-          <button class="btn btn-primary" data-action="modal-save">Save changes</button>
+          <button class="btn" data-action="modal-close">${escapeHtml(t('btn.cancel'))}</button>
+          <button class="btn btn-primary" data-action="modal-save">${escapeHtml(t('em.save'))}</button>
         </div>
       </div>
     </div>
@@ -3089,7 +3682,7 @@ function escCloseHandler(e) {
 }
 
 function subjectChipHtml(s) {
-  return `<span class="chip">${escapeHtml(s)}<button data-action="remove-subject" data-val="${escapeHtml(s)}" aria-label="Remove">${iconClose()}</button></span>`;
+  return `<span class="chip">${escapeHtml(s)}<button data-action="remove-subject" data-val="${escapeHtml(s)}" aria-label="${escapeHtml(t('em.remove'))}">${iconClose()}</button></span>`;
 }
 
 function addSubjectChip() {
@@ -3101,7 +3694,7 @@ function addSubjectChip() {
   // insert before the input
   const chip = document.createElement('span');
   chip.className = 'chip';
-  chip.innerHTML = `${escapeHtml(v)}<button data-action="remove-subject" data-val="${escapeHtml(v)}" aria-label="Remove">${iconClose()}</button>`;
+  chip.innerHTML = `${escapeHtml(v)}<button data-action="remove-subject" data-val="${escapeHtml(v)}" aria-label="${escapeHtml(t('em.remove'))}">${iconClose()}</button>`;
   container.insertBefore(chip, inp);
   inp.value = '';
   inp.focus();
@@ -3155,7 +3748,7 @@ async function handleModalSave() {
   updateCounters();
   updateUnresolvedPanel();
   closeModal();
-  toast('Saved', 'ok', 1600);
+  toast(t('toast.saved'), 'ok', 1600);
 }
 
 function closeModal() {
@@ -3172,7 +3765,7 @@ function closeModal() {
 function openGroupEditModal(groupId) {
   const g = state.groups.find(x => x.id === groupId);
   if (!g) return;
-  if (g.completedAt) { toast('Completed jobs can\u2019t be edited', 'warn'); return; }
+  if (g.completedAt) { toast(t('toast.completed_locked'), 'warn'); return; }
   state.editingGroupId = groupId;
 
   const audKey = g.settings.audienceKey;
@@ -3184,56 +3777,56 @@ function openGroupEditModal(groupId) {
   modal.innerHTML = `
     <div class="modal" style="max-width: 560px;" role="dialog" aria-modal="true" aria-labelledby="ge-title">
       <div class="modal-head">
-        <h2 id="ge-title">Edit ingestion job</h2>
-        <button class="btn-icon" data-action="modal-close" title="Close">${iconClose()}</button>
+        <h2 id="ge-title">${escapeHtml(t('ge.title'))}</h2>
+        <button class="btn-icon" data-action="modal-close" title="${escapeHtml(t('btn.close'))}">${iconClose()}</button>
       </div>
       <div class="modal-body">
         <div class="field">
-          <label for="ge-name">Group name</label>
+          <label for="ge-name">${escapeHtml(t('ge.name'))}</label>
           <input id="ge-name" type="text" value="${escapeHtml(g.name)}" />
-          <div class="hint">Used as the .mrc filename.</div>
+          <div class="hint">${escapeHtml(t('ge.name_hint'))}</div>
         </div>
 
         <div class="field">
-          <label for="ge-cat">Cataloging code <span class="marc-tag">040 $a, $c</span></label>
+          <label for="ge-cat">${escapeHtml(t('ge.cat'))} <span class="marc-tag">040 $a, $c</span></label>
           <input id="ge-cat" type="text" value="${escapeHtml(g.settings.catalogCode)}" maxlength="20" />
         </div>
 
         <div class="field">
-          <label>Audience level <span class="marc-tag">008 / 22</span></label>
+          <label>${escapeHtml(t('ge.audience'))} <span class="marc-tag">008 / 22</span></label>
           <div class="radio-row" id="ge-audience">
             ${AUDIENCE_OPTIONS.map(a => `
               <label class="radio-pill ${a.key === audKey ? 'selected' : ''}" data-key="${a.key}">
                 <input type="radio" name="ge-audience" value="${a.key}" ${a.key === audKey ? 'checked' : ''} />
-                <span class="label">${a.label}</span>
-                <span class="sub">code ${a.code}</span>
+                <span class="label">${escapeHtml(t('aud.' + a.key))}</span>
+                <span class="sub">${escapeHtml(t('aud.code', { code: a.code }))}</span>
               </label>
             `).join('')}
           </div>
         </div>
 
         <div class="field">
-          <label>Default classification when Dewey is missing <span class="marc-tag">092 $a</span></label>
+          <label>${escapeHtml(t('ge.fic'))} <span class="marc-tag">092 $a</span></label>
           <div class="radio-row" id="ge-fic">
             <label class="radio-pill ${fic === 'E' ? 'selected' : ''}" data-key="E">
               <input type="radio" name="ge-fic" value="E" ${fic === 'E' ? 'checked' : ''} />
-              <span class="label">E (Easy / picture book)</span>
-              <span class="sub">e.g. E GLY</span>
+              <span class="label">${escapeHtml(t('setup.fic.e'))}</span>
+              <span class="sub">${escapeHtml(t('setup.fic.eg_e'))}</span>
             </label>
             <label class="radio-pill ${fic === '[Fic]' ? 'selected' : ''}" data-key="[Fic]">
               <input type="radio" name="ge-fic" value="[Fic]" ${fic === '[Fic]' ? 'checked' : ''} />
-              <span class="label">[Fic] (Fiction)</span>
-              <span class="sub">e.g. [Fic] GLY</span>
+              <span class="label">${escapeHtml(t('setup.fic.fic'))}</span>
+              <span class="sub">${escapeHtml(t('setup.fic.eg_fic'))}</span>
             </label>
           </div>
-          <div class="hint">Changes apply at MARC generation time — including for rows already scanned.</div>
+          <div class="hint">${escapeHtml(t('ge.fic_hint'))}</div>
         </div>
       </div>
       <div class="modal-foot">
         <div></div>
         <div class="right">
-          <button class="btn" data-action="modal-close">Cancel</button>
-          <button class="btn btn-primary" data-action="save-group-edit">Save changes</button>
+          <button class="btn" data-action="modal-close">${escapeHtml(t('btn.cancel'))}</button>
+          <button class="btn btn-primary" data-action="save-group-edit">${escapeHtml(t('em.save'))}</button>
         </div>
       </div>
     </div>
@@ -3262,7 +3855,7 @@ async function handleGroupEditSave() {
   if (!g) { closeModal(); return; }
 
   const name = ($('#ge-name')?.value || '').trim();
-  if (!name) { toast('Name cannot be empty', 'warn'); $('#ge-name')?.focus(); return; }
+  if (!name) { toast(t('toast.name_empty'), 'warn'); $('#ge-name')?.focus(); return; }
   const cat = ($('#ge-cat')?.value || '').trim() || 'LRRM';
   const audienceKey = (document.querySelector('input[name="ge-audience"]:checked') || {}).value || g.settings.audienceKey;
   const fictionFallback = (document.querySelector('input[name="ge-fic"]:checked') || {}).value || g.settings.fictionFallback || 'E';
@@ -3275,11 +3868,11 @@ async function handleGroupEditSave() {
   try {
     await updateGroup(g);
     closeModal();
-    toast('Saved', 'ok', 1600);
+    toast(t('toast.saved'), 'ok', 1600);
     render();
   } catch (e) {
     console.error(e);
-    toast('Could not save: ' + e.message, 'bad');
+    toast(t('toast.cant_save', { err: e.message }), 'bad');
   }
 }
 
@@ -3291,29 +3884,32 @@ function openDeleteGroupModal(groupId) {
   if (!g) return;
   state.deletingGroupId = groupId;
   const c = state.groupCounts[groupId] || { total: 0 };
-  const rowWord = c.total === 1 ? 'row' : 'rows';
+  const rowWord = c.total === 1 ? t('dg.row') : t('dg.rows');
 
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.id = 'delete-group-modal';
+  const bodyMsg = c.total
+    ? t('dg.body_rows',   { name: escapeHtml(g.name), n: c.total, rowWord: rowWord })
+    : t('dg.body_simple', { name: escapeHtml(g.name) });
   modal.innerHTML = `
     <div class="modal" style="max-width: 480px;" role="alertdialog" aria-modal="true" aria-labelledby="dg-title" aria-describedby="dg-desc">
       <div class="modal-head">
-        <h2 id="dg-title">Delete ingestion job?</h2>
+        <h2 id="dg-title">${escapeHtml(t('dg.title'))}</h2>
       </div>
       <div class="modal-body" id="dg-desc">
         <p style="margin: 0 0 14px; font-size: 14px;">
-          You're about to delete <strong>${escapeHtml(g.name)}</strong>${c.total ? ` along with all <strong>${c.total}</strong> scanned ${rowWord}` : ''}.
+          ${bodyMsg}
         </p>
         <p style="margin: 0; padding: 11px 13px; background: var(--bad-soft); color: var(--bad); border-radius: var(--radius-sm); font-size: 13px; border: 1px solid #E1B7AE; line-height: 1.5;">
-          <strong>This action is irreversible and cannot be undone.</strong>
+          <strong>${escapeHtml(t('dg.warn'))}</strong>
         </p>
       </div>
       <div class="modal-foot">
         <div></div>
         <div class="right">
-          <button class="btn" data-action="modal-close" id="dg-cancel">Cancel</button>
-          <button class="btn btn-danger-fill" data-action="confirm-delete-group" data-id="${escapeHtml(g.id)}">Yes, Please Delete</button>
+          <button class="btn" data-action="modal-close" id="dg-cancel">${escapeHtml(t('btn.cancel'))}</button>
+          <button class="btn btn-danger-fill" data-action="confirm-delete-group" data-id="${escapeHtml(g.id)}">${escapeHtml(t('dg.confirm'))}</button>
         </div>
       </div>
     </div>
@@ -3330,12 +3926,12 @@ async function handleConfirmDeleteGroup(groupId) {
   try {
     await deleteGroupCascade(groupId);
     closeModal();
-    toast('Ingestion job deleted', 'ok', 2000);
+    toast(t('toast.job_deleted'), 'ok', 2000);
     await loadGroupSummaries();
     render();
   } catch (e) {
     console.error(e);
-    toast('Could not delete: ' + e.message, 'bad');
+    toast(t('toast.cant_delete', { err: e.message }), 'bad');
   }
 }
 
@@ -3352,39 +3948,37 @@ function openSettingsModal() {
   backdrop.innerHTML = `
     <div class="modal" role="dialog" aria-modal="true" style="max-width:620px;">
       <div class="modal-head">
-        <h2>Settings</h2>
-        <button class="btn-icon" data-action="modal-close" aria-label="Close">${iconClose()}</button>
+        <h2>${escapeHtml(t('settings.title'))}</h2>
+        <button class="btn-icon" data-action="modal-close" aria-label="${escapeHtml(t('btn.close'))}">${iconClose()}</button>
       </div>
       <div class="modal-body">
         <div class="field">
-          <label for="settings-gbkey">Google Books API key (optional)</label>
+          <label for="settings-gbkey">${escapeHtml(t('settings.gbkey'))}</label>
           <input id="settings-gbkey" type="text" value="${escapeHtml(existingKey)}"
                  placeholder="AIzaSy..."
                  style="font-family:var(--font-mono);font-size:12px;letter-spacing:.02em;" />
           <div class="hint" style="margin-top:10px;line-height:1.55;">
-            Without a key, Google rate-limits unauthenticated lookups aggressively
-            (often after only a handful of rapid requests per IP). With a free key,
-            the quota rises to <strong>1,000 lookups per day</strong>.
+            ${t('settings.gbkey_hint')}
             <br><br>
-            <strong>To get a key:</strong>
+            <strong>${escapeHtml(t('settings.steps'))}</strong>
             <ol style="margin:8px 0 8px 20px;padding:0;">
-              <li>Go to <a href="https://console.cloud.google.com" target="_blank" rel="noopener">console.cloud.google.com</a> and sign in.</li>
-              <li>Create a new project (any name) or pick an existing one.</li>
-              <li>In the search bar at top, type <em>Books API</em>, open it, and click <strong>Enable</strong>.</li>
-              <li>Open the left menu → <strong>APIs &amp; Services</strong> → <strong>Credentials</strong>.</li>
-              <li>Click <strong>+ Create Credentials</strong> → <strong>API key</strong>.</li>
-              <li>(Recommended) Click <strong>Edit API key</strong> → under <em>Application restrictions</em> set <strong>HTTP referrers</strong>, then add <code>libraryscience.ai/*</code> and <code>*.libraryscience.ai/*</code>.</li>
-              <li>Copy the key and paste it above.</li>
+              <li>${t('settings.s1')}</li>
+              <li>${t('settings.s2')}</li>
+              <li>${t('settings.s3')}</li>
+              <li>${t('settings.s4')}</li>
+              <li>${t('settings.s5')}</li>
+              <li>${t('settings.s6')}</li>
+              <li>${t('settings.s7')}</li>
             </ol>
-            The key lives only in your browser's local storage and is sent only to <code>googleapis.com</code>.
+            ${t('settings.privacy')}
           </div>
         </div>
       </div>
       <div class="modal-foot">
         <div></div>
         <div class="right">
-          <button class="btn" data-action="modal-close">Cancel</button>
-          <button class="btn btn-primary" data-action="save-settings">Save</button>
+          <button class="btn" data-action="modal-close">${escapeHtml(t('btn.cancel'))}</button>
+          <button class="btn btn-primary" data-action="save-settings">${escapeHtml(t('btn.save'))}</button>
         </div>
       </div>
     </div>
@@ -3402,11 +3996,11 @@ function handleSaveSettings() {
     if (raw) localStorage.setItem('googleBooksApiKey', raw);
     else     localStorage.removeItem('googleBooksApiKey');
   } catch (e) {
-    toast('Could not save settings: ' + e.message, 'bad');
+    toast(t('toast.cant_save_settings', { err: e.message }), 'bad');
     return;
   }
   closeModal();
-  toast(raw ? 'API key saved' : 'API key cleared', 'ok', 1800);
+  toast(raw ? t('toast.api_saved') : t('toast.api_cleared'), 'ok', 1800);
 }
 
 /* ============================================================
@@ -3415,20 +4009,20 @@ function handleSaveSettings() {
 async function handleCompleteGroup() {
   const g = state.currentGroup;
   const c = countRows(state.rows);
-  if (c.resolved === 0) { toast('No resolved records to export', 'warn'); return; }
+  if (c.resolved === 0) { toast(t('toast.no_resolved'), 'warn'); return; }
   if (c.failed + c.pending > 0) {
-    if (!confirm(`${c.failed + c.pending} row(s) are unresolved and won't be in the .mrc file. Complete anyway?`)) return;
+    if (!confirm(t('confirm.complete_anyway', { n: c.failed + c.pending }))) return;
   }
   try {
     const mrc = buildMrcFile(state.rows, g);
     downloadBlob(mrc, safeFilename(g.name) + '.mrc', 'application/marc');
     g.completedAt = Date.now();
     await updateGroup(g);
-    toast('MARC file downloaded', 'ok');
+    toast(t('toast.mrc_downloaded'), 'ok');
     setView('complete');
   } catch (e) {
     console.error(e);
-    toast('Could not build MARC file: ' + e.message, 'bad');
+    toast(t('toast.cant_build', { err: e.message }), 'bad');
   }
 }
 
@@ -3452,13 +4046,13 @@ function setupNetworkListener() {
   window.addEventListener('online', () => {
     state.isOnline = true;
     updateNetIndicator();
-    toast('Back online — retrying queued lookups', 'ok', 2200);
+    toast(t('toast.back_online'), 'ok', 2200);
     processOfflineQueue();
   });
   window.addEventListener('offline', () => {
     state.isOnline = false;
     updateNetIndicator();
-    toast('Offline — scans will keep saving', 'warn', 2200);
+    toast(t('toast.offline_saving'), 'warn', 2200);
   });
 }
 
@@ -3487,13 +4081,14 @@ async function init() {
     await openDb();
     await loadGroupSummaries();
     setupNetworkListener();
+    applyTranslations(document);
+    updateLangToggleUI();
     setView('home');
   } catch (e) {
     console.error(e);
     document.getElementById('view-root').innerHTML = `
       <div class="empty" style="border-color:var(--bad);color:var(--bad);">
-        Couldn't open local storage: ${escapeHtml(e.message)}.
-        IndexedDB may be disabled in your browser (private mode in Safari does this).
+        ${escapeHtml(t('err.idb', { err: e.message }))}
       </div>
     `;
   }
