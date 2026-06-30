@@ -7,6 +7,27 @@
 <meta name="description" content="A record of one volunteer's experience contributing to and learning from a primary-school library — field notes, observations, and the small tools built along the way." data-i18n="meta.description" data-i18n-attr="content">
 
 <script>
+/* Theme pre-paint: applies the saved theme preference (or computes the
+   auto-mode theme from the current hour) before any CSS or body parses,
+   so there's no flash of light theme at night. */
+(function() {
+  try {
+    var pref = localStorage.getItem('themePref') || 'auto';
+    var theme;
+    if (pref === 'light' || pref === 'dark') {
+      theme = pref;
+    } else {
+      var h = new Date().getHours() + new Date().getMinutes() / 60;
+      theme = (h >= 19.5 || h < 6) ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', theme);
+  } catch (e) {
+    document.documentElement.setAttribute('data-theme', 'light');
+  }
+})();
+</script>
+
+<script>
 /* Language pre-paint: detects user's preferred language and sets it on the
    <html> element before any CSS or body parses. Priority: saved preference
    from localStorage → browser language starts with 'es' → English default. */
@@ -37,6 +58,7 @@
     --ink-2: #4A4742;
     --ink-3: #807C75;
     --accent: #1F3A52;
+    --accent-hover: #16293b;
     --accent-soft: #E4ECF3;
     --rule: rgba(28, 27, 24, 0.10);
     --rule-strong: rgba(28, 27, 24, 0.18);
@@ -48,6 +70,40 @@
     --font-display: 'Manrope', system-ui, -apple-system, sans-serif;
     --font-body: 'Geist', system-ui, -apple-system, sans-serif;
     --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', monospace;
+
+    /* Sky — set dynamically by JS based on time of day. Noon defaults. */
+    --sky-top:        #7AAFE8;
+    --sky-mid:        #B5D0E5;
+    --sky-horizon:    #ECE6DA;
+    --sky-text:       #1C1B18;
+    --sky-text-2:     #4A4741;
+    --sky-chip-bg:    rgba(0,0,0,0.05);
+    --sky-chip-border:rgba(0,0,0,0.16);
+    --star-opacity:   0;
+  }
+
+  /* === Dark theme (auto-engages at night, or via toggle) ============ */
+  [data-theme="dark"] {
+    --paper-1:      #16181C;
+    --paper-2:      #1E2128;
+    --ink-1:        #ECE6DA;
+    --ink-2:        #B8B3A8;
+    --ink-3:        #807C75;
+    --accent:       #E4B473;
+    --accent-hover: #EAC18A;
+    --accent-soft:  #2A2820;
+    --rule:         rgba(236, 230, 218, 0.10);
+    --rule-strong:  rgba(236, 230, 218, 0.18);
+  }
+  [data-theme="dark"] .tag-tools { color: #F4C842; background: rgba(244, 200, 66, 0.14); }
+  [data-theme="dark"] .tag-reflection { color: #F08FB6; background: rgba(240, 143, 182, 0.14); }
+  [data-theme="dark"] .tag-default { background: rgba(236,230,218,0.08); }
+  [data-theme="dark"] .tool-card:hover { background: #2A2D36; }
+  [data-theme="dark"] .update:hover { background: rgba(236,230,218,0.04); }
+  [data-theme="dark"] .updates-error {
+    background: rgba(209, 122, 85, 0.10);
+    border-color: rgba(209, 122, 85, 0.35);
+    color: #E4926E;
   }
 
   *, *::before, *::after { box-sizing: border-box; }
@@ -61,6 +117,7 @@
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: background-color .6s ease, color .6s ease;
   }
 
   a { color: inherit; }
@@ -87,14 +144,45 @@
   header.sky {
     position: sticky; top: 44px; z-index: 10;
     height: 140px;
-    background: linear-gradient(to bottom, #5C8FBF 0%, #A8C6E4 55%, #E8DFB5 100%);
+    background: linear-gradient(
+      to bottom,
+      var(--sky-top) 0%,
+      var(--sky-mid) 55%,
+      var(--sky-horizon) 100%
+    );
+    overflow: hidden;
     display: flex; flex-direction: column; justify-content: flex-end;
     border-bottom: 1px solid var(--rule);
+    transition: background 1s ease;
   }
   @media (max-width: 700px) { header.sky { height: 110px; } }
   @media (max-width: 640px) { header.sky { top: 48px; } }
 
+  .sky-canvas {
+    position: absolute; inset: 0;
+    pointer-events: none;
+  }
+  .sky-stars {
+    position: absolute; inset: 0;
+    opacity: var(--star-opacity, 0);
+    transition: opacity 3s ease;
+    pointer-events: none;
+  }
+  .sky-stars .star {
+    position: absolute;
+    width: 2px; height: 2px;
+    background: #ECE6DA;
+    border-radius: 50%;
+    box-shadow: 0 0 3px rgba(236,230,218,.7);
+    animation: starTwinkle 5s ease-in-out infinite;
+  }
+  @keyframes starTwinkle {
+    0%, 100% { opacity: 0.35; }
+    50%      { opacity: 1; }
+  }
+
   .nav {
+    position: relative; z-index: 1;
     width: 100%;
     max-width: 1100px;
     margin: 0 auto;
@@ -108,7 +196,7 @@
     font-family: var(--font-display);
     font-weight: 700;
     font-size: 14px;
-    color: var(--ink-1);
+    color: var(--sky-text);
     letter-spacing: -0.02em;
     text-decoration: none;
     display: flex; align-items: center; gap: 8px;
@@ -116,11 +204,11 @@
   .nav-brand .tag {
     font-family: var(--font-mono);
     font-size: 10px;
-    background: var(--paper-2);
-    border: 1px solid var(--rule);
+    background: var(--sky-chip-bg);
+    border: 1px solid var(--sky-chip-border);
     padding: 2px 6px;
     border-radius: 4px;
-    color: var(--ink-2);
+    color: var(--sky-text);
     letter-spacing: 0.06em;
     font-weight: 500;
   }
@@ -128,15 +216,16 @@
     display: flex;
     gap: 22px;
     font-size: 13px;
-    color: var(--ink-2);
+    color: var(--sky-text-2);
     align-items: center;
   }
   .nav-links a {
     text-decoration: none;
     padding: 4px 0;
+    color: var(--sky-text-2);
     transition: color .15s ease;
   }
-  .nav-links a:hover { color: var(--ink-1); }
+  .nav-links a:hover { color: var(--sky-text); }
   .nav-cta {
     background: var(--accent);
     color: #fff !important;
@@ -147,7 +236,7 @@
     text-decoration: none;
     transition: background .15s ease;
   }
-  .nav-cta:hover { background: #16293b; }
+  .nav-cta:hover { background: var(--accent-hover); }
 
   @media (max-width: 640px) {
     .nav { padding: 12px 18px; flex-wrap: wrap; }
@@ -351,7 +440,7 @@
     white-space: nowrap;
     transition: background .15s ease;
   }
-  .open-btn:hover { background: #16293b; }
+  .open-btn:hover { background: var(--accent-hover); }
   @media (max-width: 640px) { .open-btn { width: 100%; } }
 
   .tool-placeholder {
@@ -402,7 +491,7 @@
   .nav-spacer {
     display: inline-block;
     width: 1px; height: 14px;
-    background: var(--rule-strong);
+    background: var(--sky-chip-border);
     margin: 0 4px;
   }
   .lang-toggle {
@@ -418,17 +507,36 @@
     border: none;
     padding: 4px 4px;
     cursor: pointer;
-    color: var(--ink-3);
+    color: var(--sky-text-2);
     font: inherit;
     letter-spacing: inherit;
     transition: color .12s ease;
   }
   .lang-btn[aria-pressed="true"] {
-    color: var(--ink-1);
+    color: var(--sky-text);
     font-weight: 600;
   }
-  .lang-btn:hover { color: var(--ink-1); }
-  .lang-sep { color: var(--ink-3); }
+  .lang-btn:hover { color: var(--sky-text); }
+  .lang-sep { color: var(--sky-text-2); }
+
+  /* === Theme toggle =================================== */
+  .theme-toggle {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 26px; min-width: 26px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--sky-chip-bg);
+    border: 1px solid var(--sky-chip-border);
+    color: var(--sky-text);
+    cursor: pointer;
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    transition: background .12s ease;
+  }
+  .theme-toggle:hover { background: var(--sky-chip-border); }
+  .theme-toggle svg { width: 13px; height: 13px; }
+  .theme-toggle .label { margin-left: 5px; }
+  @media (max-width: 600px) { .theme-toggle .label { display: none; } }
 </style>
 </head>
 <body>
@@ -436,6 +544,9 @@
 <div class="app">
 
   <header class="sky">
+    <div class="sky-canvas">
+      <div class="sky-stars" id="sky-stars"></div>
+    </div>
     <nav class="nav">
       <a class="nav-brand" href="/">
         <span class="tag">001</span>
@@ -451,6 +562,10 @@
           <span class="lang-sep" aria-hidden="true">·</span>
           <button type="button" class="lang-btn" data-lang-btn="es" aria-pressed="false">ES</button>
         </div>
+        <button class="theme-toggle" id="theme-toggle" title="Switch theme" aria-label="Switch theme">
+          <span id="theme-icon"></span>
+          <span class="label" id="theme-label">Auto</span>
+        </button>
       </div>
     </nav>
   </header>
@@ -541,6 +656,189 @@
 "use strict";
 
 /* ============================================================
+   SKY & THEME — time-of-day gradient + auto-cycling dark mode
+   ============================================================
+   Same engine as the MARC tool: hour-keyed color keyframes,
+   linear interpolation, stars that fade in at night, and an
+   auto/light/dark theme cycle. The pre-paint script in <head>
+   already set data-theme on <html> so first paint isn't a flash. */
+
+const SKY_KEYFRAMES = [
+  { h: 0,    top:'#0E1018', mid:'#16181C', horizon:'#1E2128' },
+  { h: 4,    top:'#16181C', mid:'#22232B', horizon:'#3A2E48' },
+  { h: 5.5,  top:'#3A4870', mid:'#7E6488', horizon:'#E89A8A' },
+  { h: 7,    top:'#5A8AD0', mid:'#B89AC0', horizon:'#F4C8A8' },
+  { h: 9,    top:'#7AAFE8', mid:'#B5D2EE', horizon:'#F0E5D2' },
+  { h: 12,   top:'#5A99D8', mid:'#A8C8E8', horizon:'#E0E5D8' },
+  { h: 15,   top:'#6AA0D8', mid:'#B5C8E0', horizon:'#F0D898' },
+  { h: 17,   top:'#5A6FA5', mid:'#D88E70', horizon:'#F4A050' },
+  { h: 18.5, top:'#3A3F5E', mid:'#9C5468', horizon:'#C75A30' },
+  { h: 19.5, top:'#1E2030', mid:'#3E2A3E', horizon:'#5A2E2E' },
+  { h: 21,   top:'#16181C', mid:'#1E2128', horizon:'#2C2436' },
+  { h: 23,   top:'#0E1018', mid:'#16181C', horizon:'#1E2128' },
+  { h: 24,   top:'#0E1018', mid:'#16181C', horizon:'#1E2128' },
+];
+
+function hex2rgb(hex) {
+  const h = hex.replace('#', '');
+  return {
+    r: parseInt(h.slice(0, 2), 16),
+    g: parseInt(h.slice(2, 4), 16),
+    b: parseInt(h.slice(4, 6), 16),
+  };
+}
+function rgb2hex({ r, g, b }) {
+  const toHex = n => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
+  return '#' + toHex(r) + toHex(g) + toHex(b);
+}
+// `frac` not `t` — never shadow the global t() translation function.
+function lerpHex(a, b, frac) {
+  const A = hex2rgb(a), B = hex2rgb(b);
+  return rgb2hex({ r: A.r + (B.r - A.r) * frac, g: A.g + (B.g - A.g) * frac, b: A.b + (B.b - A.b) * frac });
+}
+function perceivedBrightness(hex) {
+  const { r, g, b } = hex2rgb(hex);
+  return Math.sqrt(0.299 * r * r + 0.587 * g * g + 0.114 * b * b);
+}
+
+function computeSky(hour) {
+  let prev = SKY_KEYFRAMES[0], next = SKY_KEYFRAMES[SKY_KEYFRAMES.length - 1];
+  for (let i = 0; i < SKY_KEYFRAMES.length - 1; i++) {
+    if (SKY_KEYFRAMES[i].h <= hour && hour < SKY_KEYFRAMES[i + 1].h) {
+      prev = SKY_KEYFRAMES[i];
+      next = SKY_KEYFRAMES[i + 1];
+      break;
+    }
+  }
+  const span = (next.h - prev.h) || 1;
+  const frac = Math.max(0, Math.min(1, (hour - prev.h) / span));
+
+  const top     = lerpHex(prev.top,     next.top,     frac);
+  const mid     = lerpHex(prev.mid,     next.mid,     frac);
+  const horizon = lerpHex(prev.horizon, next.horizon, frac);
+
+  let starOpacity = 0;
+  if (hour >= 19.5 || hour < 5.5) starOpacity = 1;
+  else if (hour >= 18.5 && hour < 19.5) starOpacity = (hour - 18.5);
+  else if (hour >= 5.5 && hour < 6.5)   starOpacity = 1 - (hour - 5.5);
+
+  // Pick light vs dark sky text based on horizon brightness — that's where
+  // the nav sits and where text legibility matters most.
+  const horizonBrightness = perceivedBrightness(horizon);
+  const textIsDark = horizonBrightness > 145;
+  const skyText  = textIsDark ? '#1C1B18' : '#ECE6DA';
+  const skyText2 = textIsDark ? '#4A4741' : 'rgba(236,230,218,0.72)';
+  const chipBg     = textIsDark ? 'rgba(0,0,0,0.06)'   : 'rgba(255,255,255,0.10)';
+  const chipBorder = textIsDark ? 'rgba(0,0,0,0.16)'   : 'rgba(255,255,255,0.20)';
+
+  return { top, mid, horizon, starOpacity, skyText, skyText2, chipBg, chipBorder };
+}
+
+function applySky(s) {
+  const r = document.documentElement.style;
+  r.setProperty('--sky-top',          s.top);
+  r.setProperty('--sky-mid',          s.mid);
+  r.setProperty('--sky-horizon',      s.horizon);
+  r.setProperty('--sky-text',         s.skyText);
+  r.setProperty('--sky-text-2',       s.skyText2);
+  r.setProperty('--sky-chip-bg',      s.chipBg);
+  r.setProperty('--sky-chip-border',  s.chipBorder);
+  r.setProperty('--star-opacity',     String(s.starOpacity));
+}
+
+function renderStars() {
+  const wrap = document.getElementById('sky-stars');
+  if (!wrap || wrap.children.length) return;
+  const positions = [
+    { x: 15, y: 28, d: 0.0 },
+    { x: 32, y: 14, d: 1.4 },
+    { x: 48, y: 35, d: 2.6 },
+    { x: 64, y: 20, d: 0.8 },
+    { x: 78, y: 42, d: 3.2 },
+    { x: 88, y: 18, d: 1.9 },
+  ];
+  for (const p of positions) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.left = p.x + '%';
+    s.style.top  = p.y + '%';
+    s.style.animationDelay = p.d + 's';
+    wrap.appendChild(s);
+  }
+}
+
+let _skyInterval = null;
+function startSkyUpdates() {
+  const tick = () => {
+    const now = new Date();
+    const hour = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+    applySky(computeSky(hour));
+    applyEffectiveTheme();
+  };
+  tick();
+  if (_skyInterval) clearInterval(_skyInterval);
+  _skyInterval = setInterval(tick, 60 * 1000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') tick();
+  });
+}
+
+/* ===== Theme management ============================================
+   Three states: 'auto' (follows time of day), 'light', 'dark'.
+   In 'auto', dark runs ~19:30–06:00 — matches the night sky range. */
+function getThemePref() {
+  try { return localStorage.getItem('themePref') || 'auto'; } catch (_) { return 'auto'; }
+}
+function setThemePref(v) {
+  try { localStorage.setItem('themePref', v); } catch (_) {}
+  applyEffectiveTheme();
+  updateThemeToggleUI();
+}
+function effectiveTheme() {
+  const pref = getThemePref();
+  if (pref === 'light' || pref === 'dark') return pref;
+  const h = new Date().getHours() + new Date().getMinutes() / 60;
+  return (h >= 19.5 || h < 6) ? 'dark' : 'light';
+}
+function applyEffectiveTheme() {
+  document.documentElement.setAttribute('data-theme', effectiveTheme());
+}
+function cycleTheme() {
+  const pref = getThemePref();
+  const next = pref === 'auto' ? 'light' : pref === 'light' ? 'dark' : 'auto';
+  setThemePref(next);
+}
+function themeIcon(pref) {
+  if (pref === 'light') {
+    return '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">'
+      + '<circle cx="8" cy="8" r="3"/>'
+      + '<path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6L13 13M3 13l1.4-1.4M11.6 4.4L13 3"/></svg>';
+  }
+  if (pref === 'dark') {
+    return '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">'
+      + '<path d="M13 9.5A6 6 0 1 1 6.5 3a5 5 0 0 0 6.5 6.5z"/></svg>';
+  }
+  return '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">'
+    + '<circle cx="8" cy="8" r="3.5"/>'
+    + '<path d="M8 4.5a3.5 3.5 0 0 0 0 7" fill="currentColor"/></svg>';
+}
+function updateThemeToggleUI() {
+  const pref = getThemePref();
+  const icon  = document.getElementById('theme-icon');
+  const label = document.getElementById('theme-label');
+  if (icon)  icon.innerHTML  = themeIcon(pref);
+  if (label) label.textContent = t('theme.' + pref);
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.setAttribute('title', t('theme.title'));
+}
+
+/* Boot sky + theme right away. */
+renderStars();
+startSkyUpdates();
+// theme toggle wire-up — done after the dictionary is defined below,
+// so updateThemeToggleUI() can resolve the label string.
+
+/* ============================================================
    i18n dictionary
    ============================================================
    Mexican / Latin-American Spanish, informal "tú", warm tone.
@@ -554,6 +852,10 @@ const I18N = {
     'nav.about': 'About',
     'nav.updates': 'Updates',
     'nav.tools': 'Tools',
+    'theme.auto':  'Auto',
+    'theme.light': 'Light',
+    'theme.dark':  'Dark',
+    'theme.title': 'Switch theme',
 
     'hero.pill': 'A project',
     'hero.eyebrow': 'est. 2026 · east palo alto, ca',
@@ -598,6 +900,10 @@ const I18N = {
     'nav.about': 'Acerca de',
     'nav.updates': 'Actualizaciones',
     'nav.tools': 'Herramientas',
+    'theme.auto':  'Auto',
+    'theme.light': 'Claro',
+    'theme.dark':  'Oscuro',
+    'theme.title': 'Cambiar tema',
 
     'hero.pill': 'Un proyecto',
     'hero.eyebrow': 'desde 2026 · east palo alto, ca',
@@ -685,6 +991,7 @@ function setLanguage(lang) {
   try { localStorage.setItem('lsai.lang', lang); } catch (e) {}
   applyTranslations();
   syncToggle();
+  updateThemeToggleUI();
   renderPosts(); // re-render the dynamic posts list in the new language
 }
 
@@ -695,10 +1002,17 @@ document.querySelectorAll('[data-lang-btn]').forEach(function(btn) {
   });
 });
 
+/* Wire up the theme toggle — cycles auto → light → dark → auto. */
+var themeBtn = document.getElementById('theme-toggle');
+if (themeBtn) themeBtn.addEventListener('click', function() {
+  cycleTheme();
+});
+
 /* Apply the initial translation now that the dictionary is loaded.
    (The pre-paint script in <head> already set data-lang.) */
 applyTranslations();
 syncToggle();
+updateThemeToggleUI();
 
 /* ============================================================
    Posts loader
