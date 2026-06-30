@@ -3,8 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>libraryscience.ai — learning library science from inside an elementary school</title>
-<meta name="description" content="A record of one volunteer's experience contributing to and learning from a primary-school library — field notes, observations, and the small tools built along the way.">
+<title data-i18n="meta.title">libraryscience.ai — learning library science from inside an elementary school</title>
+<meta name="description" content="A record of one volunteer's experience contributing to and learning from a primary-school library — field notes, observations, and the small tools built along the way." data-i18n="meta.description" data-i18n-attr="content">
+
+<script>
+/* Language pre-paint: detects user's preferred language and sets it on the
+   <html> element before any CSS or body parses. Priority: saved preference
+   from localStorage → browser language starts with 'es' → English default. */
+(function() {
+  try {
+    var saved = localStorage.getItem('lsai.lang');
+    var browserEs = (navigator.language || '').toLowerCase().indexOf('es') === 0;
+    var lang = saved || (browserEs ? 'es' : 'en');
+    if (lang !== 'en' && lang !== 'es') lang = 'en';
+    document.documentElement.lang = lang;
+    document.documentElement.setAttribute('data-lang', lang);
+  } catch (e) {
+    document.documentElement.lang = 'en';
+    document.documentElement.setAttribute('data-lang', 'en');
+  }
+})();
+</script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -378,6 +397,38 @@
     padding: 0; margin: -1px; overflow: hidden;
     clip: rect(0,0,0,0); white-space: nowrap; border: 0;
   }
+
+  /* === Language toggle ================================ */
+  .nav-spacer {
+    display: inline-block;
+    width: 1px; height: 14px;
+    background: var(--rule-strong);
+    margin: 0 4px;
+  }
+  .lang-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+  }
+  .lang-btn {
+    background: none;
+    border: none;
+    padding: 4px 4px;
+    cursor: pointer;
+    color: var(--ink-3);
+    font: inherit;
+    letter-spacing: inherit;
+    transition: color .12s ease;
+  }
+  .lang-btn[aria-pressed="true"] {
+    color: var(--ink-1);
+    font-weight: 600;
+  }
+  .lang-btn:hover { color: var(--ink-1); }
+  .lang-sep { color: var(--ink-3); }
 </style>
 </head>
 <body>
@@ -391,9 +442,15 @@
         libraryscience.ai
       </a>
       <div class="nav-links">
-        <a href="#about">About</a>
-        <a href="#updates">Updates</a>
-        <a href="#tools">Tools</a>
+        <a href="#about" data-i18n="nav.about">About</a>
+        <a href="#updates" data-i18n="nav.updates">Updates</a>
+        <a href="#tools" data-i18n="nav.tools">Tools</a>
+        <span class="nav-spacer" aria-hidden="true"></span>
+        <div class="lang-toggle" role="group" aria-label="Language">
+          <button type="button" class="lang-btn" data-lang-btn="en" aria-pressed="true">EN</button>
+          <span class="lang-sep" aria-hidden="true">·</span>
+          <button type="button" class="lang-btn" data-lang-btn="es" aria-pressed="false">ES</button>
+        </div>
       </div>
     </nav>
   </header>
@@ -402,11 +459,11 @@
 
     <section class="hero">
       <div class="hero-eyebrow">
-        <span class="pill">A project</span>
-        <span class="mono">est. 2026 · east palo alto, ca</span>
+        <span class="pill" data-i18n="hero.pill">A project</span>
+        <span class="mono" data-i18n="hero.eyebrow">est. 2026 · east palo alto, ca</span>
       </div>
-      <h1>Learning library science from the inside of an elementary school — and seeing what AI can lend to the work.</h1>
-      <p>A record of one volunteer's experience contributing to and learning from a primary-school library. Field notes, observations, and the small tools built along the way.</p>
+      <h1 data-i18n="hero.h1">Learning library science from the inside of an elementary school — and seeing what AI can lend to the work.</h1>
+      <p data-i18n="hero.p">A record of one volunteer's experience contributing to and learning from a primary-school library. Field notes, observations, and the small tools built along the way.</p>
       <div class="hero-dots" aria-hidden="true">
         <span style="background:#F4C842"></span>
         <span style="background:#F08FB6"></span>
@@ -417,56 +474,56 @@
 
     <section id="about" class="about">
       <div class="section-head">
-        <span class="mono">002 · About</span>
-        <h2>An experiment in two parts</h2>
+        <span class="mono" data-i18n="about.eyebrow">002 · About</span>
+        <h2 data-i18n="about.h2">An experiment in two parts</h2>
       </div>
-      <p>This site documents what it's like to learn library science as it's practiced in a primary-school educational setting — and to experiment, in parallel, with how AI tools can support the healthy execution of that work.</p>
-      <p>The Updates section carries unfiltered field notes from the experience. The Tools section indexes the small utilities built along the way to make library work go a little smoother for the people doing it.</p>
+      <p data-i18n="about.p1">This site documents what it's like to learn library science as it's practiced in a primary-school educational setting — and to experiment, in parallel, with how AI tools can support the healthy execution of that work.</p>
+      <p data-i18n="about.p2">The Updates section carries unfiltered field notes from the experience. The Tools section indexes the small utilities built along the way to make library work go a little smoother for the people doing it.</p>
     </section>
 
     <section id="updates" class="updates">
       <div class="section-head">
-        <span class="mono">003 · Updates</span>
-        <h2>Field notes</h2>
+        <span class="mono" data-i18n="updates.eyebrow">003 · Updates</span>
+        <h2 data-i18n="updates.h2">Field notes</h2>
       </div>
       <div id="updates-list" class="updates-list">
-        <div class="updates-loading">Loading recent updates…</div>
+        <div class="updates-loading" data-i18n="updates.loading">Loading recent updates…</div>
       </div>
     </section>
 
     <section id="tools" class="tools">
       <div class="section-head">
-        <span class="mono">004 · Tools</span>
-        <h2>Built for the work</h2>
+        <span class="mono" data-i18n="tools.eyebrow">004 · Tools</span>
+        <h2 data-i18n="tools.h2">Built for the work</h2>
       </div>
 
       <a class="tool-card" href="/marc-file-creator/">
         <div>
-          <h3>MARC File Creator</h3>
-          <p>Scan an ISBN and a local barcode; the app pulls bibliographic data from Open Library and Google Books and writes a Destiny-ready MARC 21 record. Outputs a .mrc file ready to import.</p>
+          <h3 data-i18n="tools.marc.title">MARC File Creator</h3>
+          <p data-i18n="tools.marc.desc">Scan an ISBN and a local barcode; the app pulls bibliographic data from Open Library and Google Books and writes a Destiny-ready MARC 21 record. Outputs a .mrc file ready to import.</p>
           <div class="tool-meta">
-            <span class="status-live"><span class="status-dot"></span>Live</span>
-            <span>Browser-based</span>
-            <span>No install</span>
+            <span class="status-live"><span class="status-dot"></span><span data-i18n="tools.meta.live">Live</span></span>
+            <span data-i18n="tools.meta.browser">Browser-based</span>
+            <span data-i18n="tools.meta.noinstall">No install</span>
           </div>
         </div>
-        <span class="open-btn" aria-hidden="true">Open →</span>
+        <span class="open-btn" aria-hidden="true" data-i18n="tools.open">Open →</span>
       </a>
 
       <a class="tool-card" href="/scheduling/" style="margin-top: 12px;">
         <div>
-          <h3>Bibi · Volunteer Scheduling</h3>
-          <p>Chat with Bibi to find a time to come help at the library — read to kids, scan books, sort and label, or help plan an author visit. Bibi confirms a slot conversationally and sends a Google Calendar invite with the address and check-in details.</p>
+          <h3 data-i18n="tools.bibi.title">Bibi · Volunteer Scheduling</h3>
+          <p data-i18n="tools.bibi.desc">Chat with Bibi to find a time to come help at the library — read to kids, scan books, sort and label, or help plan an author visit. Bibi confirms a slot conversationally and sends a Google Calendar invite with the address and check-in details.</p>
           <div class="tool-meta">
-            <span class="status-live"><span class="status-dot"></span>Live</span>
-            <span>Conversational</span>
-            <span>Google Calendar</span>
+            <span class="status-live"><span class="status-dot"></span><span data-i18n="tools.meta.live">Live</span></span>
+            <span data-i18n="tools.meta.conversational">Conversational</span>
+            <span data-i18n="tools.meta.gcal">Google Calendar</span>
           </div>
         </div>
-        <span class="open-btn" aria-hidden="true">Open →</span>
+        <span class="open-btn" aria-hidden="true" data-i18n="tools.open">Open →</span>
       </a>
 
-      <div class="tool-placeholder">More tools as the work calls for them.</div>
+      <div class="tool-placeholder" data-i18n="tools.placeholder">More tools as the work calls for them.</div>
     </section>
 
   </main>
@@ -484,23 +541,185 @@
 "use strict";
 
 /* ============================================================
+   i18n dictionary
+   ============================================================
+   Mexican / Latin-American Spanish, informal "tú", warm tone.
+   Keys mirror the data-i18n attributes throughout the markup. */
+
+const I18N = {
+  en: {
+    'meta.title': 'libraryscience.ai — learning library science from inside an elementary school',
+    'meta.description': "A record of one volunteer's experience contributing to and learning from a primary-school library — field notes, observations, and the small tools built along the way.",
+
+    'nav.about': 'About',
+    'nav.updates': 'Updates',
+    'nav.tools': 'Tools',
+
+    'hero.pill': 'A project',
+    'hero.eyebrow': 'est. 2026 · east palo alto, ca',
+    'hero.h1': 'Learning library science from the inside of an elementary school — and seeing what AI can lend to the work.',
+    'hero.p': "A record of one volunteer's experience contributing to and learning from a primary-school library. Field notes, observations, and the small tools built along the way.",
+
+    'about.eyebrow': '002 · About',
+    'about.h2': 'An experiment in two parts',
+    'about.p1': "This site documents what it's like to learn library science as it's practiced in a primary-school educational setting — and to experiment, in parallel, with how AI tools can support the healthy execution of that work.",
+    'about.p2': 'The Updates section carries unfiltered field notes from the experience. The Tools section indexes the small utilities built along the way to make library work go a little smoother for the people doing it.',
+
+    'updates.eyebrow': '003 · Updates',
+    'updates.h2': 'Field notes',
+    'updates.loading': 'Loading recent updates…',
+    'updates.empty': 'No field notes yet — the first one is coming soon.',
+    'updates.error.title': "Couldn't load recent updates.",
+    'updates.error.suffix': 'try refreshing in a minute',
+
+    'tools.eyebrow': '004 · Tools',
+    'tools.h2': 'Built for the work',
+    'tools.marc.title': 'MARC File Creator',
+    'tools.marc.desc': 'Scan an ISBN and a local barcode; the app pulls bibliographic data from Open Library and Google Books and writes a Destiny-ready MARC 21 record. Outputs a .mrc file ready to import.',
+    'tools.bibi.title': 'Bibi · Volunteer Scheduling',
+    'tools.bibi.desc': 'Chat with Bibi to find a time to come help at the library — read to kids, scan books, sort and label, or help plan an author visit. Bibi confirms a slot conversationally and sends a Google Calendar invite with the address and check-in details.',
+    'tools.meta.live': 'Live',
+    'tools.meta.browser': 'Browser-based',
+    'tools.meta.noinstall': 'No install',
+    'tools.meta.conversational': 'Conversational',
+    'tools.meta.gcal': 'Google Calendar',
+    'tools.open': 'Open →',
+    'tools.placeholder': 'More tools as the work calls for them.',
+
+    'tag.tools': 'Tools',
+    'tag.reflection': 'Reflection',
+    'tag.cataloging': 'Cataloging',
+  },
+
+  es: {
+    'meta.title': 'libraryscience.ai — aprendiendo bibliotecología desde dentro de una escuela primaria',
+    'meta.description': 'El registro de la experiencia de un voluntario que contribuye y aprende en la biblioteca de una escuela primaria — apuntes de campo, observaciones y las pequeñas herramientas construidas en el camino.',
+
+    'nav.about': 'Acerca de',
+    'nav.updates': 'Actualizaciones',
+    'nav.tools': 'Herramientas',
+
+    'hero.pill': 'Un proyecto',
+    'hero.eyebrow': 'desde 2026 · east palo alto, ca',
+    'hero.h1': 'Aprendiendo bibliotecología desde dentro de una escuela primaria — y viendo qué puede aportar la IA al trabajo.',
+    'hero.p': 'Un registro de la experiencia de un voluntario que contribuye y aprende en la biblioteca de una escuela primaria. Apuntes de campo, observaciones y las pequeñas herramientas construidas en el camino.',
+
+    'about.eyebrow': '002 · Acerca de',
+    'about.h2': 'Un experimento en dos partes',
+    'about.p1': 'Este sitio documenta cómo es aprender bibliotecología tal como se practica en una escuela primaria — y experimentar, en paralelo, con cómo las herramientas de IA pueden apoyar la práctica saludable de ese trabajo.',
+    'about.p2': 'La sección de Actualizaciones reúne los apuntes de campo sin filtrar de la experiencia. La sección de Herramientas indexa las pequeñas utilidades construidas en el camino para que el trabajo bibliotecario sea un poco más fluido para quienes lo hacen.',
+
+    'updates.eyebrow': '003 · Actualizaciones',
+    'updates.h2': 'Apuntes de campo',
+    'updates.loading': 'Cargando actualizaciones recientes…',
+    'updates.empty': 'Todavía no hay apuntes — el primero llega pronto.',
+    'updates.error.title': 'No se pudieron cargar las actualizaciones recientes.',
+    'updates.error.suffix': 'intenta refrescar en un minuto',
+
+    'tools.eyebrow': '004 · Herramientas',
+    'tools.h2': 'Hechas para el trabajo',
+    'tools.marc.title': 'Creador de archivos MARC',
+    'tools.marc.desc': 'Escanea un ISBN y un código de barras local; la aplicación obtiene datos bibliográficos de Open Library y Google Books y genera un registro MARC 21 listo para Destiny. Produce un archivo .mrc listo para importar.',
+    'tools.bibi.title': 'Bibi · Programación de voluntarios',
+    'tools.bibi.desc': 'Platica con Bibi para encontrar un buen momento para venir a ayudar en la biblioteca — leerles a los niños, escanear libros, ordenar y etiquetar, o ayudar a planear la visita de un autor. Bibi confirma el momento en la conversación y te envía una invitación de Google Calendar con la dirección y los detalles para entrar.',
+    'tools.meta.live': 'Disponible',
+    'tools.meta.browser': 'En el navegador',
+    'tools.meta.noinstall': 'Sin instalación',
+    'tools.meta.conversational': 'Conversacional',
+    'tools.meta.gcal': 'Google Calendar',
+    'tools.open': 'Abrir →',
+    'tools.placeholder': 'Más herramientas a medida que el trabajo las pida.',
+
+    'tag.tools': 'Herramientas',
+    'tag.reflection': 'Reflexión',
+    'tag.cataloging': 'Catalogación',
+  },
+};
+
+const MONTHS = {
+  en: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+  es: ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'],
+};
+
+function getLang() {
+  var l = document.documentElement.getAttribute('data-lang');
+  return (l === 'es') ? 'es' : 'en';
+}
+
+function t(key) {
+  var lang = getLang();
+  return (I18N[lang] && I18N[lang][key]) || I18N.en[key] || key;
+}
+
+/* Walk the DOM and update every element with a data-i18n key. */
+function applyTranslations() {
+  var lang = getLang();
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    var key = el.getAttribute('data-i18n');
+    var value = (I18N[lang] && I18N[lang][key]) || I18N.en[key];
+    if (value == null) return;
+    var attr = el.getAttribute('data-i18n-attr');
+    if (attr) {
+      el.setAttribute(attr, value);
+    } else {
+      el.textContent = value;
+    }
+  });
+  // document.title needs an explicit assignment for some browsers
+  var titleEl = document.querySelector('title[data-i18n]');
+  if (titleEl) document.title = titleEl.textContent;
+}
+
+/* Update which language button reads as pressed. */
+function syncToggle() {
+  var lang = getLang();
+  document.querySelectorAll('[data-lang-btn]').forEach(function(btn) {
+    btn.setAttribute('aria-pressed', btn.getAttribute('data-lang-btn') === lang ? 'true' : 'false');
+  });
+}
+
+function setLanguage(lang) {
+  if (lang !== 'en' && lang !== 'es') lang = 'en';
+  document.documentElement.lang = lang;
+  document.documentElement.setAttribute('data-lang', lang);
+  try { localStorage.setItem('lsai.lang', lang); } catch (e) {}
+  applyTranslations();
+  syncToggle();
+  renderPosts(); // re-render the dynamic posts list in the new language
+}
+
+/* Wire up the toggle buttons */
+document.querySelectorAll('[data-lang-btn]').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setLanguage(btn.getAttribute('data-lang-btn'));
+  });
+});
+
+/* Apply the initial translation now that the dictionary is loaded.
+   (The pre-paint script in <head> already set data-lang.) */
+applyTranslations();
+syncToggle();
+
+/* ============================================================
    Posts loader
    ============================================================
-   Reads /posts/index.json (a manifest of {slug, date} entries),
-   sorts by date descending, then fetches each .md file directly
-   from the Pages-served URL. No GitHub API involved — so this
-   works whether the source repo is public or private. */
+   Reads /posts/index.json, fetches each .md, caches the parsed
+   posts, and re-renders on language change for lang-aware dates
+   and tags. */
 
 const POSTS_DIR = '/posts';
 const MANIFEST_URL = `${POSTS_DIR}/index.json`;
 const MAX_HOMEPAGE_POSTS = 5;
 const EXCERPT_CHARS = 280;
 
-const TAG_CLASSES = {
-  tools: 'tag-tools',
-  reflection: 'tag-reflection',
-  cataloging: 'tag-cataloging',
+const TAG_KEYS = {
+  tools: { i18n: 'tag.tools', cls: 'tag-tools' },
+  reflection: { i18n: 'tag.reflection', cls: 'tag-reflection' },
+  cataloging: { i18n: 'tag.cataloging', cls: 'tag-cataloging' },
 };
+
+let postsCache = null;     // resolved list of posts, or null if loading
+let postsError = null;     // error message string if load failed
 
 document.getElementById('foot-year').textContent = String(new Date().getFullYear());
 
@@ -515,7 +734,8 @@ document.getElementById('foot-year').textContent = String(new Date().getFullYear
       .filter(e => e && e.slug && e.date);
 
     if (entries.length === 0) {
-      container.innerHTML = `<div class="updates-empty">No field notes yet — the first one is coming soon.</div>`;
+      postsCache = [];
+      renderPosts();
       return;
     }
 
@@ -542,34 +762,47 @@ document.getElementById('foot-year').textContent = String(new Date().getFullYear
       })
     );
 
-    const ready = posts.filter(Boolean);
-
-    if (ready.length === 0) {
-      container.innerHTML = `<div class="updates-empty">No field notes yet — the first one is coming soon.</div>`;
-      return;
-    }
-
-    container.innerHTML = ready.map(renderUpdateCard).join('');
+    postsCache = posts.filter(Boolean);
+    renderPosts();
 
   } catch (err) {
     console.warn('Could not load updates:', err);
-    container.innerHTML = `
-      <div class="updates-error">
-        <strong>Couldn't load recent updates.</strong><br>
-        ${escapeHtml(err.message || 'Unknown error')} — try refreshing in a minute.
-      </div>`;
+    postsError = err.message || 'Unknown error';
+    renderPosts();
   }
 })();
+
+/* renderPosts uses the current language to render the right strings,
+   so a language toggle just calls renderPosts() again. */
+function renderPosts() {
+  const container = document.getElementById('updates-list');
+  if (!container) return;
+
+  if (postsError) {
+    container.innerHTML = `
+      <div class="updates-error">
+        <strong>${escapeHtml(t('updates.error.title'))}</strong><br>
+        ${escapeHtml(postsError)} — ${escapeHtml(t('updates.error.suffix'))}.
+      </div>`;
+    return;
+  }
+
+  if (postsCache === null) {
+    container.innerHTML = `<div class="updates-loading">${escapeHtml(t('updates.loading'))}</div>`;
+    return;
+  }
+
+  if (postsCache.length === 0) {
+    container.innerHTML = `<div class="updates-empty">${escapeHtml(t('updates.empty'))}</div>`;
+    return;
+  }
+
+  container.innerHTML = postsCache.map(renderUpdateCard).join('');
+}
 
 /* ---- helpers --------------------------------------------- */
 
 function parseFrontmatter(text) {
-  // Expects:
-  //   ---
-  //   key: value
-  //   tags: [a, b]
-  //   ---
-  //   body markdown...
   const m = /^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/.exec(text);
   if (!m) return { fm: {}, body: text };
   const fm = {};
@@ -578,7 +811,6 @@ function parseFrontmatter(text) {
     if (idx < 0) return;
     const key = line.slice(0, idx).trim();
     let val = line.slice(idx + 1).trim();
-    // strip wrapping quotes
     val = val.replace(/^["'](.*)["']$/, '$1');
     fm[key] = val;
   });
@@ -587,25 +819,32 @@ function parseFrontmatter(text) {
 
 function normalizeTags(raw) {
   if (!raw) return [];
-  // Accept "[a, b]" or "a, b" or "a"
   const stripped = String(raw).replace(/^\[|\]$/g, '');
   return stripped.split(',').map(t => t.trim()).filter(Boolean);
 }
 
+function tagInfo(tag) {
+  const key = String(tag).toLowerCase();
+  return TAG_KEYS[key] || { i18n: null, cls: 'tag-default' };
+}
+
+function tagLabel(tag) {
+  const info = tagInfo(tag);
+  return info.i18n ? t(info.i18n) : tag;
+}
+
 function tagClass(tag) {
-  return TAG_CLASSES[String(tag).toLowerCase()] || 'tag-default';
+  return tagInfo(tag).cls;
 }
 
 function formatDate(iso) {
-  // "2026-06-17" → "17 Jun 2026"
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
   if (!m) return iso;
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const months = MONTHS[getLang()] || MONTHS.en;
   return `${parseInt(m[3],10)} ${months[parseInt(m[2],10) - 1]} ${m[1]}`;
 }
 
 function makeExcerpt(body) {
-  // First paragraph only, stripped of markdown markers, capped at EXCERPT_CHARS
   const firstPara = (body || '').split(/\n\s*\n/)[0] || '';
   const plain = firstPara
     .replace(/^#+\s+/gm, '')
@@ -621,7 +860,7 @@ function makeExcerpt(body) {
 
 function renderUpdateCard(post) {
   const tagHtml = post.tags.length
-    ? `<span class="update-tag ${tagClass(post.tags[0])}">${escapeHtml(post.tags[0])}</span>`
+    ? `<span class="update-tag ${tagClass(post.tags[0])}">${escapeHtml(tagLabel(post.tags[0]))}</span>`
     : '';
   return `
     <a class="update" href="/posts/?slug=${encodeURIComponent(post.slug)}">
