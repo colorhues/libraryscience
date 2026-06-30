@@ -453,32 +453,25 @@
   }
 
   /* === Schedule ======================================= */
-  /* Bibi mounted inline as a section, filling the full section width so it
-     reads as part of the page rather than a centered widget. The hairline
-     border matches the section dividers; bibi.js manages its own internal
-     scroll if the chat gets long. */
+  /* Bibi mounted inline, sized to match its natural width on /scheduling/
+     (~720px) and explicitly left-aligned at the section's left edge with
+     margin-left: 0. The hairline border matches the section dividers. We
+     strip the immediate wrapper's chrome so the outer container is the
+     only visible boundary — but we don't touch widths inside bibi.js,
+     which would break the input-row's flex distribution (input gets too
+     narrow, Send button stretches). bibi.js manages its own internal
+     scroll when the chat gets long. */
   #bibi-inline {
-    margin-top: 22px;
+    margin: 22px auto 0 0;
+    max-width: 720px;
     border-radius: var(--radius);
     overflow: hidden;
     border: 1px solid var(--rule);
     background: var(--paper-2);
     min-height: 420px;
   }
-  /* Override bibi.js's internal panel chrome at the first two nesting
-     levels: drop its own max-width / margin-auto centering / border / radius
-     so the chat fills our container. Deeper children (message bubbles,
-     buttons) keep their own layout — only the top-level shells flex out. */
-  #bibi-inline > *,
-  #bibi-inline > * > * {
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    max-width: none !important;
-    width: 100% !important;
-  }
   #bibi-inline > * {
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
+    margin: 0 !important;
     border: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
