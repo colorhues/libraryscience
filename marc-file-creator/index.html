@@ -875,6 +875,201 @@
 
   .cam-hidden { display: none !important; }
 
+  /* Auto-capture progress ring at the top of the viewport — fills
+     left to right as the frame stays stable, drains on motion. */
+  .cam-auto-progress {
+    position: absolute; left: 0; top: 0;
+    height: 3px;
+    width: 0%;
+    background: var(--accent);
+    transition: width 100ms linear, opacity 200ms ease;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .cam-auto-progress.active { opacity: 1; }
+
+  /* Auto-capture toggle — small pill switch, top-right of viewport area */
+  .cam-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .cam-toolbar .kbd-hint {
+    font-family: var(--mono); font-size: 10px;
+    color: var(--ink-3);
+    letter-spacing: .06em;
+  }
+  .cam-toolbar .kbd-hint kbd {
+    display: inline-block;
+    padding: 1px 5px;
+    border: 1px solid var(--rule-2);
+    border-radius: 3px;
+    background: var(--surface);
+    font-family: inherit; font-size: 10px;
+    color: var(--ink-2);
+    margin: 0 1px;
+  }
+  .cam-auto-toggle {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: 11px;
+    text-transform: uppercase; letter-spacing: .08em;
+    color: var(--ink-2);
+    cursor: pointer;
+    user-select: none;
+  }
+  .cam-auto-toggle input {
+    appearance: none;
+    width: 28px; height: 16px;
+    background: var(--rule-2);
+    border-radius: 999px;
+    position: relative;
+    cursor: pointer;
+    transition: background 160ms ease;
+    margin: 0;
+    flex-shrink: 0;
+  }
+  .cam-auto-toggle input::after {
+    content: '';
+    position: absolute; top: 2px; left: 2px;
+    width: 12px; height: 12px;
+    background: var(--surface-2);
+    border-radius: 50%;
+    transition: transform 160ms ease;
+  }
+  .cam-auto-toggle input:checked { background: var(--accent); }
+  .cam-auto-toggle input:checked::after { transform: translateX(12px); }
+
+  /* In-modal barcode input for continuous scanning session. */
+  .cam-barcode-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 14px;
+    margin-top: 10px;
+    background: var(--info-soft);
+    border: 1px solid var(--info);
+    border-radius: var(--radius);
+  }
+  .cam-barcode-row .lbl {
+    font-family: var(--mono); text-transform: uppercase; letter-spacing: .08em;
+    font-size: 11px; color: var(--ink-2);
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .cam-barcode-row input {
+    flex: 1;
+    padding: 8px 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--rule-2);
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 14px;
+    letter-spacing: .04em;
+    outline: none;
+  }
+  .cam-barcode-row input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-soft);
+  }
+
+  /* Two-option retry prompt for failed captures */
+  .cam-retry-prompt {
+    display: flex; flex-direction: column; gap: 10px;
+    padding: 12px 14px;
+    margin-top: 10px;
+    background: var(--bad-soft);
+    border: 1px solid var(--bad);
+    border-radius: var(--radius);
+  }
+  .cam-retry-prompt .lbl {
+    font-family: var(--mono); text-transform: uppercase; letter-spacing: .08em;
+    font-size: 11px; color: var(--bad-deep);
+  }
+  .cam-retry-prompt .msg {
+    font-size: 13px; color: var(--ink);
+    line-height: 1.5;
+  }
+  .cam-retry-prompt .options {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-top: 4px;
+  }
+  .cam-retry-prompt .options button {
+    flex: 1; min-width: 200px;
+    padding: 8px 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--rule-2);
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 120ms ease, background 120ms ease;
+  }
+  .cam-retry-prompt .options button:hover {
+    border-color: var(--accent);
+    background: var(--surface);
+  }
+
+  /* Session log — books scanned in this modal session so far */
+  .cam-session-log {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--rule);
+  }
+  .cam-session-log .head {
+    font-family: var(--mono); text-transform: uppercase; letter-spacing: .08em;
+    font-size: 11px; color: var(--ink-3);
+    margin-bottom: 6px;
+  }
+  .cam-session-log ul {
+    list-style: none; margin: 0; padding: 0;
+    display: flex; flex-direction: column; gap: 4px;
+    max-height: 100px;
+    overflow-y: auto;
+  }
+  .cam-session-log li {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 8px;
+    background: var(--paper-2);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    color: var(--ink-2);
+  }
+  .cam-session-log li .isbn {
+    font-family: var(--mono); font-size: 11px;
+    color: var(--ink-3);
+    flex-shrink: 0;
+  }
+  .cam-session-log li .title {
+    flex: 1; min-width: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .cam-session-log li .bc {
+    font-family: var(--mono); font-size: 10px;
+    color: var(--ink-3);
+    flex-shrink: 0;
+  }
+
+  /* Brief success flash overlaid on the viewport on row commit */
+  .cam-success-flash {
+    position: absolute; inset: 0;
+    background: var(--ok);
+    opacity: 0;
+    pointer-events: none;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    font-family: var(--font-display); font-size: 20px; font-weight: 600;
+    z-index: 3;
+  }
+  .cam-success-flash.show {
+    animation: cam-flash 900ms ease-out;
+  }
+  @keyframes cam-flash {
+    0%   { opacity: 0; transform: scale(0.98); }
+    20%  { opacity: 0.85; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1); }
+  }
+
   /* ============================================================
      Toast
      ============================================================ */
@@ -1397,6 +1592,27 @@ const I18N = {
     "cam.candidate_by":    "by {author}",
     "cam.candidate_year":  "Published {year}",
 
+    // Auto-capture
+    "cam.auto_label":       "Auto-capture",
+    "cam.auto_hint":        "Holds still, snaps automatically",
+    "cam.manual_hint":      "Click Capture when ready",
+    "cam.shortcut_hint":    "Shortcut: <kbd>⌘⇧K</kbd> or <kbd>Ctrl⇧K</kbd>",
+
+    // Continuous session — barcode step
+    "cam.scan_barcode":     "Now scan the library barcode",
+    "cam.scan_barcode_ph":  "Local barcode",
+    "cam.barcode_hint":     "Scanner will Enter automatically. Manual: press Enter.",
+    "cam.book_added":       "Book added",
+    "cam.session_log":      "Books scanned this session ({n})",
+    "cam.session_done":     "Done",
+    "cam.session_skip":     "Skip this book",
+
+    // Retry prompt for failed captures
+    "cam.retry_title":      "Couldn't identify the book",
+    "cam.retry_msg":        "The camera captured a frame but I couldn't read an ISBN or title. Try one of these:",
+    "cam.retry_isbn":       "Retake — show the ISBN barcode area more clearly",
+    "cam.retry_front":      "Or show me the front cover title instead",
+
     // Settings — OpenAI key
     "settings.oaikey":     "OpenAI API key (for camera scanning)",
     "settings.oaikey_hint": "Required only if you use the camera-scan feature. The key is sent only to <code>api.openai.com</code> to identify book covers with vision. Stored in your browser's local storage.",
@@ -1667,6 +1883,27 @@ const I18N = {
     "cam.blurry":          "No se pudo leer la portada claramente — reintenta con mejor iluminación o un ángulo más cercano.",
     "cam.candidate_by":    "por {author}",
     "cam.candidate_year":  "Publicado {year}",
+
+    // Auto-capture
+    "cam.auto_label":       "Captura automática",
+    "cam.auto_hint":        "Mantén quieto, captura solo",
+    "cam.manual_hint":      "Presiona Capturar cuando estés listo",
+    "cam.shortcut_hint":    "Atajo: <kbd>⌘⇧K</kbd> o <kbd>Ctrl⇧K</kbd>",
+
+    // Continuous session — barcode step
+    "cam.scan_barcode":     "Ahora escanea el código de barras de la biblioteca",
+    "cam.scan_barcode_ph":  "Código local",
+    "cam.barcode_hint":     "El escáner enviará Enter automáticamente. Manual: presiona Enter.",
+    "cam.book_added":       "Libro agregado",
+    "cam.session_log":      "Libros escaneados en esta sesión ({n})",
+    "cam.session_done":     "Listo",
+    "cam.session_skip":     "Omitir este libro",
+
+    // Retry prompt for failed captures
+    "cam.retry_title":      "No pude identificar el libro",
+    "cam.retry_msg":        "La cámara capturó un cuadro pero no pude leer un ISBN o título. Intenta una de estas opciones:",
+    "cam.retry_isbn":       "Reintentar — muestra el área del código ISBN más claramente",
+    "cam.retry_front":      "O muéstrame el título de la portada",
 
     // Settings — OpenAI key
     "settings.oaikey":     "Llave de API de OpenAI (para escaneo con cámara)",
@@ -2552,23 +2789,43 @@ async function lookupIsbn(isbn) {
    CAMERA SCAN — laptop webcam → OpenAI Vision → ISBN or title
 
    Alternative ingest path for books whose ISBN barcode isn't
-   scannable (older paperbacks, kids' picture books, damaged
-   covers). Librarian points the laptop camera at the book, the
-   frame goes to gpt-4o-mini, which returns either an ISBN it
-   read off the back cover or a title it read off the front. If
-   we got a title, we search Google Books to pin down the ISBN;
-   the librarian picks the right match. Either way, the ISBN
-   field auto-fills and focus advances to the barcode field —
-   from that point on it's the normal ingest flow.
+   scannable. This is a SESSION-based flow: the modal stays open
+   through many books. The librarian points the camera, the
+   motion detector fires auto-capture when the frame stabilises,
+   Vision identifies the book, the librarian scans the local
+   library barcode with their USB scanner directly into the
+   modal, Enter commits the row, and the camera resets for the
+   next book. Loop until the librarian clicks Done.
+
+   Flow states:
+     preview          — camera live, auto-capture running
+     processing       — Vision analysing a captured frame
+     awaiting_barcode — ISBN locked in, barcode input focused
+     candidates       — title extracted, pick a Google Books hit
+     retry            — failed capture, two-option prompt shown
    ============================================================ */
 
 const camState = {
-  stream:          null,   // MediaStream from getUserMedia
-  devices:         [],     // Enumerated video input devices
+  stream:          null,
+  devices:         [],
   currentDeviceId: null,
-  stage:           'idle', // starting | preview | processing | isbn | searching | candidates | error
-  lastResult:      null,   // { isbn, title, author, confidence } from Vision
-  candidates:      [],     // Google Books items when title search runs
+  stage:           'idle',
+  lastResult:      null,
+  candidates:      [],
+
+  // Continuous session
+  session:         [],     // rows committed this modal session: [{isbn, barcode, title, author}]
+  currentIsbn:     null,   // ISBN locked in, awaiting barcode
+  currentMeta:     null,   // {title, author} for display during barcode step
+
+  // Auto-capture (motion detection)
+  autoCapture:     true,
+  motionRaf:       null,
+  motion: {
+    lastFrame:     null,   // Uint8ClampedArray of previous downsampled frame
+    stableSince:   null,   // timestamp when frame first went stable
+    smallCanvas:   null,   // reused 160×120 analysis canvas
+  },
 };
 
 function getOpenAIKey() {
@@ -2576,20 +2833,25 @@ function getOpenAIKey() {
 }
 
 async function openCameraScanModal() {
-  // Requires an OpenAI key — no point starting the camera otherwise.
   if (!getOpenAIKey()) {
     toast(t('cam.no_key'), 'warn');
     openSettingsModal();
     return;
   }
 
-  closeModal();  // clear any existing modal first
+  closeModal();
   Object.assign(camState, {
-    stream: null,
-    stage: 'starting',
-    lastResult: null,
-    candidates: [],
+    stream:      null,
+    stage:       'starting',
+    lastResult:  null,
+    candidates:  [],
+    session:     [],
+    currentIsbn: null,
+    currentMeta: null,
+    motionRaf:   null,
   });
+  camState.motion.lastFrame = null;
+  camState.motion.stableSince = null;
 
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
@@ -2603,6 +2865,14 @@ async function openCameraScanModal() {
       <div class="modal-body">
         <p class="cam-instructions">${escapeHtml(t('cam.instructions'))}</p>
 
+        <div class="cam-toolbar">
+          <label class="cam-auto-toggle">
+            <input type="checkbox" id="cam-auto-toggle" ${camState.autoCapture ? 'checked' : ''}>
+            <span>${escapeHtml(t('cam.auto_label'))}</span>
+          </label>
+          <span class="kbd-hint">${t('cam.shortcut_hint')}</span>
+        </div>
+
         <div class="cam-picker-row" id="cam-picker-row" style="display:none;">
           <label for="cam-device">${escapeHtml(t('cam.pick_device'))}</label>
           <select id="cam-device"></select>
@@ -2611,17 +2881,20 @@ async function openCameraScanModal() {
         <div class="cam-viewport" id="cam-viewport">
           <video id="cam-video" autoplay playsinline muted></video>
           <canvas id="cam-canvas"></canvas>
+          <div class="cam-auto-progress" id="cam-auto-progress"></div>
+          <div class="cam-success-flash" id="cam-success-flash">✓ ${escapeHtml(t('cam.book_added'))}</div>
           <div class="cam-placeholder" id="cam-placeholder">${escapeHtml(t('toast.cam_starting'))}</div>
         </div>
 
         <div class="cam-status" id="cam-status"></div>
         <div id="cam-result-area"></div>
+        <div id="cam-session-log-area"></div>
       </div>
       <div class="modal-foot">
-        <div></div>
+        <span class="source-note" id="cam-hint-text">${escapeHtml(camState.autoCapture ? t('cam.auto_hint') : t('cam.manual_hint'))}</span>
         <div class="right">
-          <button class="btn" data-action="cam-close">${escapeHtml(t('btn.cancel'))}</button>
-          <button class="btn btn-primary" id="cam-primary-btn" data-action="cam-capture" disabled>${escapeHtml(t('cam.capture'))}</button>
+          <button class="btn" data-action="cam-close">${escapeHtml(t('cam.session_done'))}</button>
+          <button class="btn btn-primary" id="cam-primary-btn" data-action="cam-capture" ${camState.autoCapture ? 'style="display:none;"' : ''} disabled>${escapeHtml(t('cam.capture'))}</button>
         </div>
       </div>
     </div>
@@ -2629,6 +2902,10 @@ async function openCameraScanModal() {
   document.body.appendChild(modal);
   modal.addEventListener('click', (e) => { if (e.target === modal) closeCameraModal(); });
   document.addEventListener('keydown', camEscHandler);
+
+  // Wire the auto-capture toggle inline (checkbox change isn't a click event
+  // the central dispatcher catches on all browsers)
+  document.getElementById('cam-auto-toggle')?.addEventListener('change', handleCameraToggleAuto);
 
   await initCamera();
 }
@@ -2638,10 +2915,18 @@ function camEscHandler(e) {
 }
 
 function closeCameraModal() {
+  stopMotionDetection();
   stopCameraStream();
   document.removeEventListener('keydown', camEscHandler);
   $$('.modal-backdrop').forEach(m => m.remove());
   camState.stage = 'idle';
+  // If any books were committed this session, refresh the counters
+  // (individual rows were already added to state.rows + rendered as
+  // they came in).
+  if (camState.session.length > 0) {
+    updateCounters();
+    updateUnresolvedPanel();
+  }
 }
 
 async function initCamera() {
@@ -2650,15 +2935,11 @@ async function initCamera() {
   const placeholder = $('#cam-placeholder');
 
   try {
-    // Request permission with a generic preference (rear camera on tablets/laptops
-    // with dual cameras; falls back gracefully on single-camera laptops).
     const initialStream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: { ideal: 'environment' } },
       audio: false,
     });
 
-    // After permission is granted, enumerate cameras (labels are only visible
-    // after permission on most browsers).
     const devices = await navigator.mediaDevices.enumerateDevices();
     camState.devices = devices.filter(d => d.kind === 'videoinput');
 
@@ -2671,9 +2952,10 @@ async function initCamera() {
     video.srcObject = initialStream;
     camState.currentDeviceId = initialStream.getVideoTracks()[0]?.getSettings().deviceId || null;
 
-    // Hide placeholder once the stream is producing frames.
     video.addEventListener('loadedmetadata', () => {
       if (placeholder) placeholder.style.display = 'none';
+      // Kick off motion detection once video is producing frames
+      if (camState.autoCapture) startMotionDetection();
     }, { once: true });
 
     camState.stage = 'preview';
@@ -2704,6 +2986,7 @@ function populateCameraPicker() {
 }
 
 async function switchCamera(deviceId) {
+  stopMotionDetection();
   stopCameraStream();
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -2713,6 +2996,10 @@ async function switchCamera(deviceId) {
     camState.stream = stream;
     camState.currentDeviceId = deviceId;
     $('#cam-video').srcObject = stream;
+    // Restart motion detection after the new stream lights up
+    if (camState.autoCapture && camState.stage === 'preview') {
+      $('#cam-video').addEventListener('loadedmetadata', startMotionDetection, { once: true });
+    }
   } catch (e) {
     console.error('[camera] switch failed:', e);
     setCamStatus(t('cam.vision_failed'), 'error');
@@ -2726,50 +3013,187 @@ function stopCameraStream() {
   }
 }
 
+/* ─────────────────────────────────────────────────────────────
+   Motion-detection auto-capture
+
+   Downsamples every video frame to a 160×120 analysis canvas and
+   compares against the previous downsampled frame. When motion
+   (mean per-pixel absolute difference) drops below the threshold
+   AND the frame has enough content (mean deviation from mid-grey,
+   which rejects blank/dark scenes), we start a stability timer.
+   After STABLE_DURATION ms of continuous stability, we fire
+   handleCameraCapture. A visual progress bar drains left→right
+   at the top of the viewport during the countdown.
+   ───────────────────────────────────────────────────────────── */
+
+const MOTION_THRESHOLD = 8;      // per-pixel mean absolute diff (0-255)
+const VARIANCE_MIN     = 15;     // per-pixel mean deviation from mid-grey; rejects blank scenes
+const STABLE_DURATION  = 1500;   // ms of stability required before capture fires
+const ANALYSIS_W       = 160;
+const ANALYSIS_H       = 120;
+
+function startMotionDetection() {
+  stopMotionDetection();  // guard against double-start
+  if (!camState.motion.smallCanvas) {
+    camState.motion.smallCanvas = document.createElement('canvas');
+    camState.motion.smallCanvas.width  = ANALYSIS_W;
+    camState.motion.smallCanvas.height = ANALYSIS_H;
+  }
+  camState.motion.lastFrame = null;
+  camState.motion.stableSince = null;
+
+  const tick = () => {
+    if (camState.stage !== 'preview' || !camState.autoCapture) {
+      camState.motionRaf = null;
+      return;
+    }
+    analyzeFrame();
+    camState.motionRaf = requestAnimationFrame(tick);
+  };
+  camState.motionRaf = requestAnimationFrame(tick);
+}
+
+function stopMotionDetection() {
+  if (camState.motionRaf) {
+    cancelAnimationFrame(camState.motionRaf);
+    camState.motionRaf = null;
+  }
+  updateAutoCaptureProgress(null);
+}
+
+function analyzeFrame() {
+  const video = $('#cam-video');
+  if (!video || !video.videoWidth) return;
+
+  const small = camState.motion.smallCanvas;
+  const ctx = small.getContext('2d');
+  ctx.drawImage(video, 0, 0, ANALYSIS_W, ANALYSIS_H);
+  const curr = ctx.getImageData(0, 0, ANALYSIS_W, ANALYSIS_H).data;
+
+  if (!camState.motion.lastFrame) {
+    camState.motion.lastFrame = new Uint8ClampedArray(curr);
+    return;
+  }
+  const prev = camState.motion.lastFrame;
+
+  // Single pass: sum absolute grayscale diffs (motion) and absolute
+  // deviations from mid-grey 128 (variance proxy for content).
+  let motionSum = 0;
+  let varSum = 0;
+  const N = curr.length / 4;
+  for (let i = 0; i < curr.length; i += 4) {
+    const g1 = (curr[i] + curr[i + 1] + curr[i + 2]) / 3;
+    const g0 = (prev[i] + prev[i + 1] + prev[i + 2]) / 3;
+    motionSum += Math.abs(g1 - g0);
+    varSum    += Math.abs(g1 - 128);
+  }
+  const motion   = motionSum / N;
+  const variance = varSum / N;
+
+  // Store current as previous for next tick
+  prev.set(curr);
+
+  const now = performance.now();
+  const isStable = motion < MOTION_THRESHOLD && variance > VARIANCE_MIN;
+
+  if (isStable) {
+    if (!camState.motion.stableSince) {
+      camState.motion.stableSince = now;
+      updateAutoCaptureProgress(0);
+    } else {
+      const elapsed = now - camState.motion.stableSince;
+      const progress = elapsed / STABLE_DURATION;
+      updateAutoCaptureProgress(progress);
+      if (elapsed >= STABLE_DURATION) {
+        camState.motion.stableSince = null;
+        updateAutoCaptureProgress(null);
+        handleCameraCapture();
+      }
+    }
+  } else {
+    if (camState.motion.stableSince) {
+      camState.motion.stableSince = null;
+      updateAutoCaptureProgress(null);
+    }
+  }
+}
+
+function updateAutoCaptureProgress(progress) {
+  const bar = $('#cam-auto-progress');
+  if (!bar) return;
+  if (progress === null) {
+    bar.style.width = '0%';
+    bar.classList.remove('active');
+  } else {
+    bar.classList.add('active');
+    bar.style.width = `${Math.min(100, progress * 100)}%`;
+  }
+}
+
+function handleCameraToggleAuto(e) {
+  camState.autoCapture = !!e.target.checked;
+  const primaryBtn = $('#cam-primary-btn');
+  const hint = $('#cam-hint-text');
+  if (camState.autoCapture) {
+    if (primaryBtn) primaryBtn.style.display = 'none';
+    if (hint) hint.textContent = t('cam.auto_hint');
+    if (camState.stage === 'preview') startMotionDetection();
+  } else {
+    if (primaryBtn) primaryBtn.style.display = '';
+    if (hint) hint.textContent = t('cam.manual_hint');
+    stopMotionDetection();
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Capture pipeline
+   ───────────────────────────────────────────────────────────── */
+
 async function handleCameraCapture() {
+  // Guard: don't process a new capture if we're already mid-flight
+  if (camState.stage !== 'preview') return;
+
   const video = $('#cam-video');
   const canvas = $('#cam-canvas');
   const primaryBtn = $('#cam-primary-btn');
 
   if (!video || !video.videoWidth) return;
 
-  // Snap the current frame to the canvas at native resolution — clearer
-  // text for Vision than a downscaled thumbnail.
+  stopMotionDetection();
+
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   const ctx = canvas.getContext('2d');
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  // Show the frozen capture in place of the live stream.
   canvas.style.display = 'block';
   video.style.display = 'none';
 
-  // JPEG at 0.85 quality — small enough to POST quickly, clear enough
-  // for Vision to read cover text and any visible barcodes.
   const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
 
   camState.stage = 'processing';
-  primaryBtn.disabled = true;
+  if (primaryBtn) primaryBtn.disabled = true;
   setCamStatus(`<span class="cam-spinner"></span> ${escapeHtml(t('cam.processing'))}`, '');
 
   try {
     const result = await callOpenAIVision(dataUrl);
     camState.lastResult = result;
 
-    // Route based on what Vision returned.
     if (result.isbn && looksLikeIsbn(result.isbn)) {
-      showIsbnFound(result);
+      // Direct ISBN — go straight to the barcode step
+      enterAwaitingBarcode(cleanIsbn(result.isbn), {
+        title: result.title,
+        author: result.author,
+        confidence: result.confidence,
+      });
     } else if (result.title) {
       await runTitleSearch(result.title, result.author);
     } else {
-      // Image processed but no book identified.
-      setCamStatus(t('cam.blurry'), 'error');
-      resetToRetake();
+      showRetryPrompt();
     }
   } catch (e) {
     console.error('[camera] vision failed:', e);
-    setCamStatus(t('cam.vision_failed'), 'error');
-    resetToRetake();
+    showRetryPrompt();
   }
 }
 
@@ -2781,73 +3205,63 @@ function handleCameraRetake() {
 
   canvas.style.display = 'none';
   video.style.display = '';
-  resultArea.innerHTML = '';
+  if (resultArea) resultArea.innerHTML = '';
   setCamStatus('', '');
 
-  primaryBtn.textContent = t('cam.capture');
-  primaryBtn.setAttribute('data-action', 'cam-capture');
-  primaryBtn.disabled = false;
+  if (primaryBtn) {
+    primaryBtn.textContent = t('cam.capture');
+    primaryBtn.setAttribute('data-action', 'cam-capture');
+    primaryBtn.disabled = false;
+    primaryBtn.style.display = camState.autoCapture ? 'none' : '';
+  }
   camState.stage = 'preview';
+  if (camState.autoCapture) startMotionDetection();
 }
 
-function resetToRetake() {
-  const primaryBtn = $('#cam-primary-btn');
-  primaryBtn.textContent = t('cam.retake');
-  primaryBtn.setAttribute('data-action', 'cam-retake');
-  primaryBtn.disabled = false;
-}
-
-function showIsbnFound(result) {
+/* Retry prompt — shown when Vision can't identify a book at all
+   (no ISBN, no title). Presents two rephrased retake options so
+   the librarian knows to shift the framing. */
+function showRetryPrompt() {
   const resultArea = $('#cam-result-area');
-  const primaryBtn = $('#cam-primary-btn');
-  const isbn = cleanIsbn(result.isbn);
-  const conf = ['high','medium','low'].includes(result.confidence) ? result.confidence : 'medium';
-
+  if (!resultArea) return;
   resultArea.innerHTML = `
-    <div class="cam-isbn-result">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-        <div class="lbl">${escapeHtml(t('cam.isbn_found'))}</div>
-        <span class="cam-confidence ${conf}">${escapeHtml(t('cam.confidence', { level: conf }))}</span>
+    <div class="cam-retry-prompt">
+      <div class="lbl">${escapeHtml(t('cam.retry_title'))}</div>
+      <div class="msg">${escapeHtml(t('cam.retry_msg'))}</div>
+      <div class="options">
+        <button type="button" data-action="cam-retake">${escapeHtml(t('cam.retry_isbn'))}</button>
+        <button type="button" data-action="cam-retake">${escapeHtml(t('cam.retry_front'))}</button>
       </div>
-      <div class="val">${escapeHtml(isbn)}</div>
-      ${result.title
-        ? `<div style="font-size:12px;color:var(--ink-3);margin-top:2px;">${escapeHtml(result.title)}${result.author ? ' — ' + escapeHtml(result.author) : ''}</div>`
-        : ''}
     </div>
   `;
   setCamStatus('', '');
-  primaryBtn.textContent = t('cam.use_isbn');
-  primaryBtn.setAttribute('data-action', 'cam-use-isbn');
-  primaryBtn.setAttribute('data-isbn', isbn);
-  primaryBtn.disabled = false;
-  camState.stage = 'isbn';
+  const primaryBtn = $('#cam-primary-btn');
+  if (primaryBtn) {
+    primaryBtn.textContent = t('cam.retake');
+    primaryBtn.setAttribute('data-action', 'cam-retake');
+    primaryBtn.disabled = false;
+    primaryBtn.style.display = camState.autoCapture ? 'none' : '';
+  }
+  camState.stage = 'retry';
 }
 
 async function runTitleSearch(title, author) {
-  const primaryBtn = $('#cam-primary-btn');
   camState.stage = 'searching';
   setCamStatus(`<span class="cam-spinner"></span> ${escapeHtml(t('cam.searching'))}`, '');
 
   try {
     const results = await searchGoogleBooksByTitle(title, author);
     if (!results.length) {
-      setCamStatus(t('cam.no_matches'), 'error');
-      resetToRetake();
+      showRetryPrompt();
       return;
     }
     camState.candidates = results;
     renderCandidates(results, title, author);
     setCamStatus('', '');
-    // Keep the primary button as "Retake" — candidate selection uses the
-    // per-card buttons instead of the primary CTA.
-    primaryBtn.textContent = t('cam.retake');
-    primaryBtn.setAttribute('data-action', 'cam-retake');
-    primaryBtn.disabled = false;
     camState.stage = 'candidates';
   } catch (e) {
     console.error('[camera] title search failed:', e);
-    setCamStatus(t('cam.no_matches'), 'error');
-    resetToRetake();
+    showRetryPrompt();
   }
 }
 
@@ -2862,8 +3276,13 @@ function renderCandidates(items, extractedTitle, extractedAuthor) {
     const authors = (v.authors || []).join(', ');
     const thumb = v.imageLinks?.smallThumbnail || v.imageLinks?.thumbnail;
     const year = extractYear(v.publishedDate) || '';
+    // Encode candidate metadata into data attributes so the click
+    // handler can pass them through to enterAwaitingBarcode.
     return `
-      <button class="cam-candidate" data-action="cam-pick-candidate" data-isbn="${escapeHtml(isbn)}">
+      <button class="cam-candidate" data-action="cam-pick-candidate"
+              data-isbn="${escapeHtml(isbn)}"
+              data-title="${escapeHtml(v.title || '')}"
+              data-author="${escapeHtml(authors)}">
         ${thumb
           ? `<img class="thumb" src="${escapeHtml(thumb.replace(/^http:/, 'https:'))}" alt="" loading="lazy">`
           : `<div class="thumb"></div>`}
@@ -2877,7 +3296,7 @@ function renderCandidates(items, extractedTitle, extractedAuthor) {
   }).filter(Boolean).join('');
 
   if (!cards) {
-    setCamStatus(t('cam.no_matches'), 'error');
+    showRetryPrompt();
     return;
   }
 
@@ -2902,26 +3321,176 @@ function pickIsbnFromVolume(v) {
   return isbn13?.identifier || isbn10?.identifier || null;
 }
 
-function handleCameraUseIsbn(isbn) {
-  fillScanIsbnAndAdvance(isbn);
-  closeCameraModal();
-  toast(t('toast.cam_isbn'), 'ok');
+function handleCameraPickCandidate(isbn, btn) {
+  // Pull title/author off the clicked button so the barcode step
+  // can show what the librarian just picked.
+  const title  = btn?.getAttribute('data-title')  || '';
+  const author = btn?.getAttribute('data-author') || '';
+  enterAwaitingBarcode(cleanIsbn(isbn), { title, author, confidence: 'high' });
 }
 
-function handleCameraPickCandidate(isbn) {
-  fillScanIsbnAndAdvance(isbn);
-  closeCameraModal();
-  toast(t('toast.cam_isbn'), 'ok');
+/* ─────────────────────────────────────────────────────────────
+   Continuous session — barcode step + row commit + reset
+   ───────────────────────────────────────────────────────────── */
+
+function enterAwaitingBarcode(isbn, meta) {
+  camState.stage = 'awaiting_barcode';
+  camState.currentIsbn = isbn;
+  camState.currentMeta = meta || {};
+
+  const resultArea = $('#cam-result-area');
+  const conf = meta?.confidence || 'medium';
+  const titleLine = meta?.title
+    ? `<div style="font-size:13px;color:var(--ink);margin-top:2px;font-weight:500;">${escapeHtml(meta.title)}</div>`
+    : '';
+  const authorLine = meta?.author
+    ? `<div style="font-size:12px;color:var(--ink-3);">${escapeHtml(t('cam.candidate_by', { author: meta.author }))}</div>`
+    : '';
+
+  resultArea.innerHTML = `
+    <div class="cam-isbn-result">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <div class="lbl">${escapeHtml(t('cam.isbn_found'))}</div>
+        <span class="cam-confidence ${conf}">${escapeHtml(t('cam.confidence', { level: conf }))}</span>
+      </div>
+      <div class="val">${escapeHtml(isbn)}</div>
+      ${titleLine}
+      ${authorLine}
+    </div>
+    <div class="cam-barcode-row">
+      <span class="lbl">${escapeHtml(t('cam.scan_barcode'))}</span>
+      <input id="cam-barcode-input" type="text"
+             placeholder="${escapeHtml(t('cam.scan_barcode_ph'))}"
+             autocomplete="off" inputmode="numeric" />
+    </div>
+    <div style="font-size:11px;color:var(--ink-3);margin-top:4px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;">
+      ${escapeHtml(t('cam.barcode_hint'))}
+    </div>
+  `;
+
+  // Hide primary button — the barcode Enter is now the commit path
+  const primaryBtn = $('#cam-primary-btn');
+  if (primaryBtn) primaryBtn.style.display = 'none';
+
+  setCamStatus('', '');
+
+  // Wire the barcode input: Enter → commit
+  const input = $('#cam-barcode-input');
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleCameraBarcodeCommit();
+    }
+  });
+  // Focus so the USB scanner's keystrokes land here directly
+  setTimeout(() => input.focus(), 0);
 }
 
-function fillScanIsbnAndAdvance(isbn) {
-  const isbnEl = $('#scan-isbn');
-  const barcodeEl = $('#scan-barcode');
-  if (isbnEl) {
-    isbnEl.value = cleanIsbn(isbn);
-    // Mirror the USB scanner flow: after ISBN lands, cursor goes to barcode.
-    if (barcodeEl) barcodeEl.focus();
+async function handleCameraBarcodeCommit() {
+  const input = $('#cam-barcode-input');
+  const barcode = (input?.value || '').trim();
+  const isbn = camState.currentIsbn;
+
+  if (!barcode) {
+    toast(t('toast.missing_bc'), 'warn');
+    input?.focus();
+    return;
   }
+  if (!isbn) {
+    toast(t('toast.missing_isbn'), 'warn');
+    return;
+  }
+  if (!state.currentGroup) {
+    console.warn('[camera] no current group; cannot commit');
+    return;
+  }
+
+  try {
+    const row = await createRow(state.currentGroup.id, isbn, barcode);
+    state.rows.push(row);
+    appendRowToTable(row);
+    // Session log entry
+    camState.session.push({
+      isbn,
+      barcode,
+      title:  camState.currentMeta?.title  || '',
+      author: camState.currentMeta?.author || '',
+    });
+    // Kick off the lookup pipeline (same one the main scan flow uses)
+    startLookup(row.id);
+
+    // Success flash + reset to preview for the next book
+    flashSuccess();
+    setTimeout(() => resetForNextBook(), 700);
+  } catch (e) {
+    console.error('[camera] commit failed:', e);
+    toast(t('toast.cant_save_row', { err: e.message }), 'bad');
+  }
+}
+
+function flashSuccess() {
+  const flash = $('#cam-success-flash');
+  if (!flash) return;
+  flash.classList.remove('show');
+  // Force reflow so re-adding the class restarts the animation
+  void flash.offsetWidth;
+  flash.classList.add('show');
+}
+
+function resetForNextBook() {
+  const video = $('#cam-video');
+  const canvas = $('#cam-canvas');
+  const resultArea = $('#cam-result-area');
+  const primaryBtn = $('#cam-primary-btn');
+
+  camState.currentIsbn = null;
+  camState.currentMeta = null;
+  camState.lastResult = null;
+  camState.candidates = [];
+
+  canvas.style.display = 'none';
+  if (video) video.style.display = '';
+  if (resultArea) resultArea.innerHTML = '';
+
+  if (primaryBtn) {
+    primaryBtn.textContent = t('cam.capture');
+    primaryBtn.setAttribute('data-action', 'cam-capture');
+    primaryBtn.disabled = false;
+    primaryBtn.style.display = camState.autoCapture ? 'none' : '';
+  }
+
+  setCamStatus('', '');
+  renderSessionLog();
+
+  camState.stage = 'preview';
+  camState.motion.lastFrame = null;
+  camState.motion.stableSince = null;
+  if (camState.autoCapture) startMotionDetection();
+}
+
+function renderSessionLog() {
+  const area = $('#cam-session-log-area');
+  if (!area) return;
+  if (!camState.session.length) {
+    area.innerHTML = '';
+    return;
+  }
+  const items = camState.session.slice().reverse().slice(0, 5).map(s => {
+    const label = s.title || t('row.no_title');
+    return `
+      <li>
+        <span class="isbn">${escapeHtml(s.isbn)}</span>
+        <span class="title">${escapeHtml(label)}</span>
+        <span class="bc">${escapeHtml(s.barcode)}</span>
+      </li>
+    `;
+  }).join('');
+  area.innerHTML = `
+    <div class="cam-session-log">
+      <div class="head">${escapeHtml(t('cam.session_log', { n: camState.session.length }))}</div>
+      <ul>${items}</ul>
+    </div>
+  `;
 }
 
 function setCamStatus(html, kind) {
@@ -3834,7 +4403,7 @@ function renderIngest() {
           <div class="scan-row">
             <span class="lbl">${escapeHtml(t('ingest.scan_lbl'))}</span>
             <input id="scan-isbn"    type="text" placeholder="${escapeHtml(t('ingest.scan_isbn_ph'))}" autocomplete="off" inputmode="numeric" />
-            <button class="cam-btn" data-action="scan-with-camera" title="${escapeHtml(t('cam.btn_open'))}" aria-label="${escapeHtml(t('cam.btn_open_aria'))}">${iconCamera()}</button>
+            <button class="cam-btn" data-action="scan-with-camera" title="${escapeHtml(t('cam.btn_open'))} (⌘⇧K / Ctrl⇧K)" aria-label="${escapeHtml(t('cam.btn_open_aria'))}">${iconCamera()}</button>
             <input id="scan-barcode" type="text" placeholder="${escapeHtml(t('ingest.scan_bc_ph'))}" autocomplete="off" inputmode="numeric" />
             <div class="hint">${escapeHtml(t('ingest.scan_hint'))}</div>
             <button class="btn btn-sm" data-action="manual-commit">${escapeHtml(t('ingest.scan_add'))}</button>
@@ -4099,8 +4668,27 @@ document.addEventListener('click', (e) => {
     case 'cam-close':            closeCameraModal(); break;
     case 'cam-capture':          handleCameraCapture(); break;
     case 'cam-retake':           handleCameraRetake(); break;
-    case 'cam-use-isbn':         handleCameraUseIsbn(t.getAttribute('data-isbn')); break;
-    case 'cam-pick-candidate':   handleCameraPickCandidate(t.getAttribute('data-isbn')); break;
+    case 'cam-pick-candidate':   handleCameraPickCandidate(t.getAttribute('data-isbn'), t); break;
+  }
+});
+
+/* Global keyboard shortcut for camera scan.
+   Cmd/Ctrl + Shift + K opens the camera modal from anywhere inside
+   the ingest view. Guarded so it doesn't fire on the home / setup /
+   complete views (nowhere to route the ISBN to) or when a modal is
+   already open (would double-stack modals). Works even when the
+   ISBN input has focus — modifier requirement keeps it from
+   colliding with normal typing / USB scanner keystrokes. */
+document.addEventListener('keydown', (e) => {
+  const isCmdOrCtrl = e.metaKey || e.ctrlKey;
+  if (isCmdOrCtrl && e.shiftKey && (e.key === 'K' || e.key === 'k')) {
+    // Only meaningful mid-ingest — the shortcut should be a no-op
+    // on the home page, setup wizard, or completion view.
+    if (!state.currentGroup) return;
+    // Don't stack camera modal on top of settings / delete / edit modal.
+    if (document.getElementById('modal-backdrop')) return;
+    e.preventDefault();
+    openCameraScanModal();
   }
 });
 
