@@ -731,6 +731,151 @@
   .chip-input { flex: 1; min-width: 100px; border: none; background: transparent; padding: 4px 6px; outline: none; font-size: 12px; }
 
   /* ============================================================
+     Camera scan modal
+     ============================================================ */
+  .cam-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 6px;
+    height: 34px; width: 34px;
+    padding: 0;
+    background: var(--surface);
+    border: 1px solid var(--rule-2);
+    border-radius: var(--radius-sm);
+    color: var(--ink-2);
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+    flex-shrink: 0;
+  }
+  .cam-btn:hover { background: var(--surface-2); border-color: var(--accent); color: var(--accent); }
+  .cam-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .cam-btn svg { width: 18px; height: 18px; display: block; }
+
+  .cam-modal { max-width: 640px; }
+
+  .cam-instructions {
+    font-size: 13px; color: var(--ink-2); line-height: 1.5;
+    margin: 0 0 12px 0;
+  }
+
+  .cam-picker-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 10px;
+    font-size: 12px; color: var(--ink-3);
+  }
+  .cam-picker-row label { font-family: var(--mono); text-transform: uppercase; letter-spacing: .05em; }
+  .cam-picker-row select {
+    flex: 1; min-width: 0;
+    padding: 4px 8px;
+    font-family: var(--body); font-size: 12px;
+    background: var(--surface); border: 1px solid var(--rule-2); border-radius: var(--radius-sm);
+    color: var(--ink);
+  }
+
+  .cam-viewport {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    width: 100%;
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cam-viewport video, .cam-viewport img {
+    width: 100%; height: 100%; object-fit: cover;
+    display: block;
+  }
+  .cam-viewport canvas { display: none; }
+
+  .cam-viewport .cam-placeholder {
+    font-size: 12px; color: var(--ink-3);
+    font-family: var(--mono); text-transform: uppercase; letter-spacing: .1em;
+    text-align: center; padding: 20px;
+  }
+
+  .cam-status {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 10px;
+    font-size: 13px; color: var(--ink-2);
+    min-height: 20px;
+  }
+  .cam-status.is-error { color: var(--bad-deep); }
+  .cam-status.is-ok { color: var(--ok); }
+
+  .cam-spinner {
+    width: 14px; height: 14px;
+    border: 2px solid var(--rule-2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: cam-spin 0.8s linear infinite;
+  }
+  @keyframes cam-spin { to { transform: rotate(360deg); } }
+
+  .cam-isbn-result {
+    display: flex; flex-direction: column; gap: 6px;
+    padding: 12px 14px;
+    background: var(--ok-soft);
+    border: 1px solid var(--ok);
+    border-radius: var(--radius);
+    margin-top: 10px;
+  }
+  .cam-isbn-result .lbl {
+    font-family: var(--mono); text-transform: uppercase; letter-spacing: .08em;
+    font-size: 11px; color: var(--ink-2);
+  }
+  .cam-isbn-result .val {
+    font-family: var(--mono); font-size: 15px; font-weight: 500;
+    color: var(--ink);
+  }
+
+  .cam-candidates {
+    display: flex; flex-direction: column; gap: 8px;
+    margin-top: 10px;
+    max-height: 320px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .cam-candidate {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 8px 10px;
+    background: var(--surface);
+    border: 1px solid var(--rule-2);
+    border-radius: var(--radius-sm);
+    text-align: left;
+    cursor: pointer;
+    color: inherit;
+    transition: background 120ms ease, border-color 120ms ease;
+  }
+  .cam-candidate:hover { background: var(--surface-2); border-color: var(--accent); }
+  .cam-candidate:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .cam-candidate .thumb {
+    width: 40px; height: 56px;
+    background: var(--paper-2);
+    border-radius: 2px;
+    flex-shrink: 0;
+    object-fit: cover;
+  }
+  .cam-candidate .meta { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+  .cam-candidate .meta .title { font-size: 13px; font-weight: 500; color: var(--ink); line-height: 1.3; }
+  .cam-candidate .meta .author { font-size: 12px; color: var(--ink-3); }
+  .cam-candidate .meta .isbn { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+
+  .cam-confidence {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-family: var(--mono); font-size: 10px;
+    text-transform: uppercase; letter-spacing: .1em;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: var(--paper-2);
+    color: var(--ink-3);
+  }
+  .cam-confidence.high { background: var(--ok-soft); color: var(--ok); }
+  .cam-confidence.medium { background: var(--warn-soft); color: var(--warn); }
+  .cam-confidence.low { background: var(--bad-soft); color: var(--bad-deep); }
+
+  .cam-hidden { display: none !important; }
+
+  /* ============================================================
      Toast
      ============================================================ */
   .toasts {
@@ -1228,6 +1373,39 @@ const I18N = {
     "err.api_unavailable": "Lookup APIs temporarily unavailable — try again shortly",
     "err.not_found":       "No record found in Open Library or Google Books",
     "err.idb":             "Couldn't open local storage: {err}. IndexedDB may be disabled in your browser (private mode in Safari does this).",
+
+    // Camera scan flow
+    "cam.btn_open":        "Scan with camera",
+    "cam.btn_open_aria":   "Scan book cover with camera to extract ISBN or title",
+    "cam.title":           "Scan book cover",
+    "cam.instructions":    "Hold the book so its cover fills the frame. Point at the back cover if the ISBN is printed there, otherwise show the front cover title.",
+    "cam.pick_device":     "Camera",
+    "cam.capture":         "Capture cover",
+    "cam.retake":          "Retake",
+    "cam.use_isbn":        "Use this ISBN",
+    "cam.processing":      "Reading cover…",
+    "cam.searching":       "Searching Google Books for matches…",
+    "cam.isbn_found":      "Found ISBN on cover",
+    "cam.title_found":     "Extracted title — pick the match",
+    "cam.confidence":      "Confidence: {level}",
+    "cam.no_matches":      "No Google Books matches. Try a clearer capture or type the ISBN manually.",
+    "cam.no_key":          "Add an OpenAI API key in Settings to enable camera scanning.",
+    "cam.perm_denied":     "Camera permission denied. Enable it in your browser's site settings.",
+    "cam.no_camera":       "No camera detected on this device.",
+    "cam.vision_failed":   "The camera scan couldn't identify a book. Try a clearer capture, better lighting, or type the ISBN manually.",
+    "cam.blurry":          "Couldn't read the cover clearly — retake with better lighting or a closer angle.",
+    "cam.candidate_by":    "by {author}",
+    "cam.candidate_year":  "Published {year}",
+
+    // Settings — OpenAI key
+    "settings.oaikey":     "OpenAI API key (for camera scanning)",
+    "settings.oaikey_hint": "Required only if you use the camera-scan feature. The key is sent only to <code>api.openai.com</code> to identify book covers with vision. Stored in your browser's local storage.",
+    "settings.oaikey_get": "Create a key at <a href=\"https://platform.openai.com/api-keys\" target=\"_blank\" rel=\"noopener\">platform.openai.com/api-keys</a>. Set a monthly spend cap on the OpenAI dashboard as a safety net.",
+
+    // Toasts
+    "toast.cam_isbn":      "ISBN pre-filled from camera scan",
+    "toast.cam_title":     "Title extracted — pick a match",
+    "toast.cam_starting":  "Starting camera…",
   },
 
   es: {
@@ -1466,6 +1644,39 @@ const I18N = {
     "err.api_unavailable": "APIs de búsqueda temporalmente no disponibles — vuelve a intentar pronto",
     "err.not_found":       "No se encontró registro en Open Library ni en Google Books",
     "err.idb":             "No se pudo abrir el almacenamiento local: {err}. IndexedDB puede estar desactivado en tu navegador (el modo privado en Safari hace esto).",
+
+    // Camera scan flow
+    "cam.btn_open":        "Escanear con cámara",
+    "cam.btn_open_aria":   "Escanear la portada del libro con la cámara para extraer ISBN o título",
+    "cam.title":           "Escanear portada del libro",
+    "cam.instructions":    "Sostén el libro para que su portada llene el encuadre. Apunta a la contraportada si el ISBN está impreso allí, o muestra el título de la portada.",
+    "cam.pick_device":     "Cámara",
+    "cam.capture":         "Capturar portada",
+    "cam.retake":          "Reintentar",
+    "cam.use_isbn":        "Usar este ISBN",
+    "cam.processing":      "Leyendo portada…",
+    "cam.searching":       "Buscando coincidencias en Google Books…",
+    "cam.isbn_found":      "ISBN encontrado en la portada",
+    "cam.title_found":     "Título extraído — elige la coincidencia",
+    "cam.confidence":      "Confianza: {level}",
+    "cam.no_matches":      "No se encontraron coincidencias en Google Books. Intenta una captura más clara o escribe el ISBN manualmente.",
+    "cam.no_key":          "Agrega una llave de API de OpenAI en Ajustes para habilitar el escaneo con cámara.",
+    "cam.perm_denied":     "Permiso de cámara denegado. Habilítalo en la configuración del sitio en tu navegador.",
+    "cam.no_camera":       "No se detectó ninguna cámara en este dispositivo.",
+    "cam.vision_failed":   "El escaneo con cámara no pudo identificar un libro. Intenta con una captura más clara, mejor iluminación, o escribe el ISBN manualmente.",
+    "cam.blurry":          "No se pudo leer la portada claramente — reintenta con mejor iluminación o un ángulo más cercano.",
+    "cam.candidate_by":    "por {author}",
+    "cam.candidate_year":  "Publicado {year}",
+
+    // Settings — OpenAI key
+    "settings.oaikey":     "Llave de API de OpenAI (para escaneo con cámara)",
+    "settings.oaikey_hint": "Requerida solo si usas el escaneo con cámara. La llave se envía solo a <code>api.openai.com</code> para identificar portadas de libros con visión. Se guarda en el almacenamiento local de tu navegador.",
+    "settings.oaikey_get": "Crea una llave en <a href=\"https://platform.openai.com/api-keys\" target=\"_blank\" rel=\"noopener\">platform.openai.com/api-keys</a>. Configura un límite mensual de gasto en el panel de OpenAI como red de seguridad.",
+
+    // Toasts
+    "toast.cam_isbn":      "ISBN precargado del escaneo con cámara",
+    "toast.cam_title":     "Título extraído — elige una coincidencia",
+    "toast.cam_starting":  "Iniciando cámara…",
   },
 };
 
@@ -2338,6 +2549,483 @@ async function lookupIsbn(isbn) {
 }
 
 /* ============================================================
+   CAMERA SCAN — laptop webcam → OpenAI Vision → ISBN or title
+
+   Alternative ingest path for books whose ISBN barcode isn't
+   scannable (older paperbacks, kids' picture books, damaged
+   covers). Librarian points the laptop camera at the book, the
+   frame goes to gpt-4o-mini, which returns either an ISBN it
+   read off the back cover or a title it read off the front. If
+   we got a title, we search Google Books to pin down the ISBN;
+   the librarian picks the right match. Either way, the ISBN
+   field auto-fills and focus advances to the barcode field —
+   from that point on it's the normal ingest flow.
+   ============================================================ */
+
+const camState = {
+  stream:          null,   // MediaStream from getUserMedia
+  devices:         [],     // Enumerated video input devices
+  currentDeviceId: null,
+  stage:           'idle', // starting | preview | processing | isbn | searching | candidates | error
+  lastResult:      null,   // { isbn, title, author, confidence } from Vision
+  candidates:      [],     // Google Books items when title search runs
+};
+
+function getOpenAIKey() {
+  try { return localStorage.getItem('openaiApiKey') || null; } catch (_) { return null; }
+}
+
+async function openCameraScanModal() {
+  // Requires an OpenAI key — no point starting the camera otherwise.
+  if (!getOpenAIKey()) {
+    toast(t('cam.no_key'), 'warn');
+    openSettingsModal();
+    return;
+  }
+
+  closeModal();  // clear any existing modal first
+  Object.assign(camState, {
+    stream: null,
+    stage: 'starting',
+    lastResult: null,
+    candidates: [],
+  });
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.id = 'modal-backdrop';
+  modal.innerHTML = `
+    <div class="modal cam-modal" role="dialog" aria-modal="true" aria-labelledby="cam-title">
+      <div class="modal-head">
+        <h2 id="cam-title">${escapeHtml(t('cam.title'))}</h2>
+        <button class="btn-icon" data-action="cam-close" aria-label="${escapeHtml(t('btn.close'))}">${iconClose()}</button>
+      </div>
+      <div class="modal-body">
+        <p class="cam-instructions">${escapeHtml(t('cam.instructions'))}</p>
+
+        <div class="cam-picker-row" id="cam-picker-row" style="display:none;">
+          <label for="cam-device">${escapeHtml(t('cam.pick_device'))}</label>
+          <select id="cam-device"></select>
+        </div>
+
+        <div class="cam-viewport" id="cam-viewport">
+          <video id="cam-video" autoplay playsinline muted></video>
+          <canvas id="cam-canvas"></canvas>
+          <div class="cam-placeholder" id="cam-placeholder">${escapeHtml(t('toast.cam_starting'))}</div>
+        </div>
+
+        <div class="cam-status" id="cam-status"></div>
+        <div id="cam-result-area"></div>
+      </div>
+      <div class="modal-foot">
+        <div></div>
+        <div class="right">
+          <button class="btn" data-action="cam-close">${escapeHtml(t('btn.cancel'))}</button>
+          <button class="btn btn-primary" id="cam-primary-btn" data-action="cam-capture" disabled>${escapeHtml(t('cam.capture'))}</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeCameraModal(); });
+  document.addEventListener('keydown', camEscHandler);
+
+  await initCamera();
+}
+
+function camEscHandler(e) {
+  if (e.key === 'Escape') closeCameraModal();
+}
+
+function closeCameraModal() {
+  stopCameraStream();
+  document.removeEventListener('keydown', camEscHandler);
+  $$('.modal-backdrop').forEach(m => m.remove());
+  camState.stage = 'idle';
+}
+
+async function initCamera() {
+  const video = $('#cam-video');
+  const primaryBtn = $('#cam-primary-btn');
+  const placeholder = $('#cam-placeholder');
+
+  try {
+    // Request permission with a generic preference (rear camera on tablets/laptops
+    // with dual cameras; falls back gracefully on single-camera laptops).
+    const initialStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } },
+      audio: false,
+    });
+
+    // After permission is granted, enumerate cameras (labels are only visible
+    // after permission on most browsers).
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    camState.devices = devices.filter(d => d.kind === 'videoinput');
+
+    if (camState.devices.length > 1) {
+      populateCameraPicker();
+      $('#cam-picker-row').style.display = 'flex';
+    }
+
+    camState.stream = initialStream;
+    video.srcObject = initialStream;
+    camState.currentDeviceId = initialStream.getVideoTracks()[0]?.getSettings().deviceId || null;
+
+    // Hide placeholder once the stream is producing frames.
+    video.addEventListener('loadedmetadata', () => {
+      if (placeholder) placeholder.style.display = 'none';
+    }, { once: true });
+
+    camState.stage = 'preview';
+    primaryBtn.disabled = false;
+    setCamStatus('', '');
+  } catch (e) {
+    console.error('[camera] init failed:', e);
+    if (placeholder) placeholder.style.display = 'none';
+    if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+      setCamStatus(t('cam.perm_denied'), 'error');
+    } else if (e.name === 'NotFoundError' || e.name === 'DevicesNotFoundError') {
+      setCamStatus(t('cam.no_camera'), 'error');
+    } else {
+      setCamStatus(t('cam.vision_failed'), 'error');
+    }
+    camState.stage = 'error';
+  }
+}
+
+function populateCameraPicker() {
+  const sel = $('#cam-device');
+  sel.innerHTML = camState.devices.map((d, i) => {
+    const label = d.label || `${t('cam.pick_device')} ${i + 1}`;
+    return `<option value="${escapeHtml(d.deviceId)}">${escapeHtml(label)}</option>`;
+  }).join('');
+  if (camState.currentDeviceId) sel.value = camState.currentDeviceId;
+  sel.addEventListener('change', () => switchCamera(sel.value));
+}
+
+async function switchCamera(deviceId) {
+  stopCameraStream();
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { deviceId: { exact: deviceId } },
+      audio: false,
+    });
+    camState.stream = stream;
+    camState.currentDeviceId = deviceId;
+    $('#cam-video').srcObject = stream;
+  } catch (e) {
+    console.error('[camera] switch failed:', e);
+    setCamStatus(t('cam.vision_failed'), 'error');
+  }
+}
+
+function stopCameraStream() {
+  if (camState.stream) {
+    camState.stream.getTracks().forEach(track => track.stop());
+    camState.stream = null;
+  }
+}
+
+async function handleCameraCapture() {
+  const video = $('#cam-video');
+  const canvas = $('#cam-canvas');
+  const primaryBtn = $('#cam-primary-btn');
+
+  if (!video || !video.videoWidth) return;
+
+  // Snap the current frame to the canvas at native resolution — clearer
+  // text for Vision than a downscaled thumbnail.
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  // Show the frozen capture in place of the live stream.
+  canvas.style.display = 'block';
+  video.style.display = 'none';
+
+  // JPEG at 0.85 quality — small enough to POST quickly, clear enough
+  // for Vision to read cover text and any visible barcodes.
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+  camState.stage = 'processing';
+  primaryBtn.disabled = true;
+  setCamStatus(`<span class="cam-spinner"></span> ${escapeHtml(t('cam.processing'))}`, '');
+
+  try {
+    const result = await callOpenAIVision(dataUrl);
+    camState.lastResult = result;
+
+    // Route based on what Vision returned.
+    if (result.isbn && looksLikeIsbn(result.isbn)) {
+      showIsbnFound(result);
+    } else if (result.title) {
+      await runTitleSearch(result.title, result.author);
+    } else {
+      // Image processed but no book identified.
+      setCamStatus(t('cam.blurry'), 'error');
+      resetToRetake();
+    }
+  } catch (e) {
+    console.error('[camera] vision failed:', e);
+    setCamStatus(t('cam.vision_failed'), 'error');
+    resetToRetake();
+  }
+}
+
+function handleCameraRetake() {
+  const video = $('#cam-video');
+  const canvas = $('#cam-canvas');
+  const resultArea = $('#cam-result-area');
+  const primaryBtn = $('#cam-primary-btn');
+
+  canvas.style.display = 'none';
+  video.style.display = '';
+  resultArea.innerHTML = '';
+  setCamStatus('', '');
+
+  primaryBtn.textContent = t('cam.capture');
+  primaryBtn.setAttribute('data-action', 'cam-capture');
+  primaryBtn.disabled = false;
+  camState.stage = 'preview';
+}
+
+function resetToRetake() {
+  const primaryBtn = $('#cam-primary-btn');
+  primaryBtn.textContent = t('cam.retake');
+  primaryBtn.setAttribute('data-action', 'cam-retake');
+  primaryBtn.disabled = false;
+}
+
+function showIsbnFound(result) {
+  const resultArea = $('#cam-result-area');
+  const primaryBtn = $('#cam-primary-btn');
+  const isbn = cleanIsbn(result.isbn);
+  const conf = ['high','medium','low'].includes(result.confidence) ? result.confidence : 'medium';
+
+  resultArea.innerHTML = `
+    <div class="cam-isbn-result">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <div class="lbl">${escapeHtml(t('cam.isbn_found'))}</div>
+        <span class="cam-confidence ${conf}">${escapeHtml(t('cam.confidence', { level: conf }))}</span>
+      </div>
+      <div class="val">${escapeHtml(isbn)}</div>
+      ${result.title
+        ? `<div style="font-size:12px;color:var(--ink-3);margin-top:2px;">${escapeHtml(result.title)}${result.author ? ' — ' + escapeHtml(result.author) : ''}</div>`
+        : ''}
+    </div>
+  `;
+  setCamStatus('', '');
+  primaryBtn.textContent = t('cam.use_isbn');
+  primaryBtn.setAttribute('data-action', 'cam-use-isbn');
+  primaryBtn.setAttribute('data-isbn', isbn);
+  primaryBtn.disabled = false;
+  camState.stage = 'isbn';
+}
+
+async function runTitleSearch(title, author) {
+  const primaryBtn = $('#cam-primary-btn');
+  camState.stage = 'searching';
+  setCamStatus(`<span class="cam-spinner"></span> ${escapeHtml(t('cam.searching'))}`, '');
+
+  try {
+    const results = await searchGoogleBooksByTitle(title, author);
+    if (!results.length) {
+      setCamStatus(t('cam.no_matches'), 'error');
+      resetToRetake();
+      return;
+    }
+    camState.candidates = results;
+    renderCandidates(results, title, author);
+    setCamStatus('', '');
+    // Keep the primary button as "Retake" — candidate selection uses the
+    // per-card buttons instead of the primary CTA.
+    primaryBtn.textContent = t('cam.retake');
+    primaryBtn.setAttribute('data-action', 'cam-retake');
+    primaryBtn.disabled = false;
+    camState.stage = 'candidates';
+  } catch (e) {
+    console.error('[camera] title search failed:', e);
+    setCamStatus(t('cam.no_matches'), 'error');
+    resetToRetake();
+  }
+}
+
+function renderCandidates(items, extractedTitle, extractedAuthor) {
+  const resultArea = $('#cam-result-area');
+  const conf = camState.lastResult?.confidence || 'medium';
+
+  const cards = items.slice(0, 6).map(item => {
+    const v = item.volumeInfo || {};
+    const isbn = pickIsbnFromVolume(v);
+    if (!isbn) return '';
+    const authors = (v.authors || []).join(', ');
+    const thumb = v.imageLinks?.smallThumbnail || v.imageLinks?.thumbnail;
+    const year = extractYear(v.publishedDate) || '';
+    return `
+      <button class="cam-candidate" data-action="cam-pick-candidate" data-isbn="${escapeHtml(isbn)}">
+        ${thumb
+          ? `<img class="thumb" src="${escapeHtml(thumb.replace(/^http:/, 'https:'))}" alt="" loading="lazy">`
+          : `<div class="thumb"></div>`}
+        <div class="meta">
+          <div class="title">${escapeHtml(v.title || t('row.no_title'))}</div>
+          ${authors ? `<div class="author">${escapeHtml(t('cam.candidate_by', { author: authors }))}</div>` : ''}
+          <div class="isbn">${escapeHtml(isbn)}${year ? ' · ' + escapeHtml(t('cam.candidate_year', { year })) : ''}</div>
+        </div>
+      </button>
+    `;
+  }).filter(Boolean).join('');
+
+  if (!cards) {
+    setCamStatus(t('cam.no_matches'), 'error');
+    return;
+  }
+
+  resultArea.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;margin-bottom:4px;">
+      <div style="font-size:12px;color:var(--ink-2);min-width:0;">
+        <strong>${escapeHtml(extractedTitle)}</strong>${extractedAuthor ? ' — ' + escapeHtml(extractedAuthor) : ''}
+      </div>
+      <span class="cam-confidence ${conf}">${escapeHtml(t('cam.confidence', { level: conf }))}</span>
+    </div>
+    <div style="font-size:11px;color:var(--ink-3);margin-bottom:8px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;">
+      ${escapeHtml(t('cam.title_found'))}
+    </div>
+    <div class="cam-candidates">${cards}</div>
+  `;
+}
+
+function pickIsbnFromVolume(v) {
+  const ids = v.industryIdentifiers || [];
+  const isbn13 = ids.find(i => i.type === 'ISBN_13');
+  const isbn10 = ids.find(i => i.type === 'ISBN_10');
+  return isbn13?.identifier || isbn10?.identifier || null;
+}
+
+function handleCameraUseIsbn(isbn) {
+  fillScanIsbnAndAdvance(isbn);
+  closeCameraModal();
+  toast(t('toast.cam_isbn'), 'ok');
+}
+
+function handleCameraPickCandidate(isbn) {
+  fillScanIsbnAndAdvance(isbn);
+  closeCameraModal();
+  toast(t('toast.cam_isbn'), 'ok');
+}
+
+function fillScanIsbnAndAdvance(isbn) {
+  const isbnEl = $('#scan-isbn');
+  const barcodeEl = $('#scan-barcode');
+  if (isbnEl) {
+    isbnEl.value = cleanIsbn(isbn);
+    // Mirror the USB scanner flow: after ISBN lands, cursor goes to barcode.
+    if (barcodeEl) barcodeEl.focus();
+  }
+}
+
+function setCamStatus(html, kind) {
+  const el = $('#cam-status');
+  if (!el) return;
+  el.innerHTML = html;
+  el.classList.remove('is-error', 'is-ok');
+  if (kind === 'error') el.classList.add('is-error');
+  if (kind === 'ok') el.classList.add('is-ok');
+}
+
+/* ============================================================
+   OPENAI VISION — book cover → structured JSON
+   ============================================================ */
+
+async function callOpenAIVision(imageDataUrl) {
+  const apiKey = getOpenAIKey();
+  if (!apiKey) throw new Error('No OpenAI API key configured');
+
+  // System prompt engineered for reliable JSON output. The exact schema
+  // is enforced via response_format: json_object below. Temperature 0
+  // for deterministic output on the same image.
+  const systemPrompt = `You are examining a photograph of a book cover.
+
+Return ONLY valid JSON with these exact fields:
+{
+  "isbn": "digits only, no dashes, or null",
+  "title": "the book's title as it appears, or null",
+  "author": "the author's name in natural order, e.g. 'Jane Smith', or null",
+  "confidence": "high" | "medium" | "low"
+}
+
+Rules:
+1. Look for an ISBN first — a 10 or 13 digit number, typically near a barcode on the back cover, often labeled "ISBN" or "ISBN-13". If you find a clear ISBN, return it in the isbn field (digits only, no dashes or spaces).
+2. If no ISBN is visible (most front covers), extract the book's title. It's usually the largest text on the cover. Distinguish it from the series name, publisher blurbs like "#1 BESTSELLER", and the author's name.
+3. Include the author name if visible on the cover.
+4. Confidence: "high" if text is clearly legible; "medium" if partially obscured or stylized; "low" if guessing.
+5. If the image doesn't show a book cover clearly, return all nulls with confidence "low".
+
+Return ONLY the JSON object, no other text.`;
+
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type':  'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'Identify this book cover. Return JSON only.' },
+            { type: 'image_url', image_url: { url: imageDataUrl, detail: 'auto' } },
+          ],
+        },
+      ],
+      response_format: { type: 'json_object' },
+      max_completion_tokens: 200,
+      temperature: 0,
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`OpenAI Vision ${res.status}: ${body.slice(0, 200)}`);
+  }
+
+  const data = await res.json();
+  const raw = data.choices?.[0]?.message?.content?.trim() || '{}';
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    throw new Error('Vision returned malformed JSON');
+  }
+
+  return {
+    isbn:       (parsed.isbn   && String(parsed.isbn).trim())   || null,
+    title:      (parsed.title  && String(parsed.title).trim())  || null,
+    author:     (parsed.author && String(parsed.author).trim()) || null,
+    confidence: ['high', 'medium', 'low'].includes(parsed.confidence) ? parsed.confidence : 'medium',
+  };
+}
+
+/* Google Books title search — mirrors lookupGoogleBooks but queries by
+   intitle/inauthor instead of isbn, and returns raw items so the
+   caller can render a candidate picker. */
+async function searchGoogleBooksByTitle(title, author) {
+  const parts = [`intitle:${JSON.stringify(title)}`];
+  if (author) parts.push(`inauthor:${JSON.stringify(author)}`);
+  const q = encodeURIComponent(parts.join('+'));
+  let url = `https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=8&printType=books`;
+  let apiKey = null;
+  try { apiKey = localStorage.getItem('googleBooksApiKey'); } catch (_) {}
+  if (apiKey) url += `&key=${encodeURIComponent(apiKey)}`;
+  const json = await fetchJson(url, { headers: { 'Accept': 'application/json' } });
+  return json.items || [];
+}
+
+/* ============================================================
    LOOKUP QUEUE
    ============================================================ */
 async function startLookup(rowId) {
@@ -3146,6 +3834,7 @@ function renderIngest() {
           <div class="scan-row">
             <span class="lbl">${escapeHtml(t('ingest.scan_lbl'))}</span>
             <input id="scan-isbn"    type="text" placeholder="${escapeHtml(t('ingest.scan_isbn_ph'))}" autocomplete="off" inputmode="numeric" />
+            <button class="cam-btn" data-action="scan-with-camera" title="${escapeHtml(t('cam.btn_open'))}" aria-label="${escapeHtml(t('cam.btn_open_aria'))}">${iconCamera()}</button>
             <input id="scan-barcode" type="text" placeholder="${escapeHtml(t('ingest.scan_bc_ph'))}" autocomplete="off" inputmode="numeric" />
             <div class="hint">${escapeHtml(t('ingest.scan_hint'))}</div>
             <button class="btn btn-sm" data-action="manual-commit">${escapeHtml(t('ingest.scan_add'))}</button>
@@ -3287,6 +3976,9 @@ function iconTrash() {
 function iconClose() {
   return `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3l10 10M13 3L3 13"/></svg>`;
 }
+function iconCamera() {
+  return `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h2l1-1.5h6L12 5h2v8H2z"/><circle cx="8" cy="9" r="2.5"/></svg>`;
+}
 
 /* ============================================================
    RE-RENDER HELPERS (partial updates without full repaint)
@@ -3403,6 +4095,12 @@ document.addEventListener('click', (e) => {
     case 'set-lang-es':  setLang('es'); break;
     case 'open-settings':   openSettingsModal(); break;
     case 'save-settings':   handleSaveSettings(); break;
+    case 'scan-with-camera':     openCameraScanModal(); break;
+    case 'cam-close':            closeCameraModal(); break;
+    case 'cam-capture':          handleCameraCapture(); break;
+    case 'cam-retake':           handleCameraRetake(); break;
+    case 'cam-use-isbn':         handleCameraUseIsbn(t.getAttribute('data-isbn')); break;
+    case 'cam-pick-candidate':   handleCameraPickCandidate(t.getAttribute('data-isbn')); break;
   }
 });
 
@@ -3965,7 +4663,9 @@ async function handleConfirmDeleteGroup(groupId) {
    ============================================================ */
 function openSettingsModal() {
   let existingKey = '';
+  let existingOAIKey = '';
   try { existingKey = localStorage.getItem('googleBooksApiKey') || ''; } catch (_) {}
+  try { existingOAIKey = localStorage.getItem('openaiApiKey') || ''; } catch (_) {}
 
   const backdrop = document.createElement('div');
   backdrop.className = 'modal-backdrop';
@@ -3998,6 +4698,19 @@ function openSettingsModal() {
             ${t('settings.privacy')}
           </div>
         </div>
+
+        <div class="field" style="margin-top:20px; padding-top:20px; border-top:1px solid var(--rule);">
+          <label for="settings-oaikey">${escapeHtml(t('settings.oaikey'))}</label>
+          <input id="settings-oaikey" type="password" value="${escapeHtml(existingOAIKey)}"
+                 placeholder="sk-..."
+                 autocomplete="off"
+                 style="font-family:var(--font-mono);font-size:12px;letter-spacing:.02em;" />
+          <div class="hint" style="margin-top:10px;line-height:1.55;">
+            ${t('settings.oaikey_hint')}
+            <br><br>
+            ${t('settings.oaikey_get')}
+          </div>
+        </div>
       </div>
       <div class="modal-foot">
         <div></div>
@@ -4016,16 +4729,20 @@ function openSettingsModal() {
 
 function handleSaveSettings() {
   const input = document.getElementById('settings-gbkey');
+  const oaiInput = document.getElementById('settings-oaikey');
   const raw = (input?.value || '').trim();
+  const oaiRaw = (oaiInput?.value || '').trim();
   try {
-    if (raw) localStorage.setItem('googleBooksApiKey', raw);
-    else     localStorage.removeItem('googleBooksApiKey');
+    if (raw)    localStorage.setItem('googleBooksApiKey', raw);
+    else        localStorage.removeItem('googleBooksApiKey');
+    if (oaiRaw) localStorage.setItem('openaiApiKey', oaiRaw);
+    else        localStorage.removeItem('openaiApiKey');
   } catch (e) {
     toast(t('toast.cant_save_settings', { err: e.message }), 'bad');
     return;
   }
   closeModal();
-  toast(raw ? t('toast.api_saved') : t('toast.api_cleared'), 'ok', 1800);
+  toast(raw || oaiRaw ? t('toast.api_saved') : t('toast.api_cleared'), 'ok', 1800);
 }
 
 /* ============================================================
