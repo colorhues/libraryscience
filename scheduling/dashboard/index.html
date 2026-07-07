@@ -353,28 +353,19 @@
     </div>
 
     <div class="tabs" role="tablist">
-      <button class="tab active" role="tab" data-tab="calendar" aria-selected="true">
-        <span data-i18n="tab.calendar">Calendar</span>
-      </button>
-      <button class="tab" role="tab" data-tab="roster" aria-selected="false">
+      <button class="tab active" role="tab" data-tab="roster" aria-selected="true">
         <span data-i18n="tab.roster">Roster</span>
         <span class="count" id="roster-count"></span>
+      </button>
+      <button class="tab" role="tab" data-tab="calendar" aria-selected="false">
+        <span data-i18n="tab.calendar">Calendar</span>
       </button>
     </div>
 
     <div id="state-loading" class="state" data-i18n="state.loading">Loading recent visits…</div>
     <div id="state-error" class="state error" hidden></div>
 
-    <div id="view-calendar" class="view active" role="tabpanel" hidden>
-      <div class="cal-nav">
-        <button class="cal-nav-btn" id="cal-prev">← <span data-i18n="cal.prev">prev</span></button>
-        <div class="cal-month-label" id="cal-month-label">—</div>
-        <button class="cal-nav-btn" id="cal-next"><span data-i18n="cal.next">next</span> →</button>
-      </div>
-      <div class="cal-grid" id="cal-grid"></div>
-    </div>
-
-    <div id="view-roster" class="view" role="tabpanel" hidden>
+    <div id="view-roster" class="view active" role="tabpanel" hidden>
       <div class="roster-summary" id="roster-summary"></div>
       <table class="roster">
         <thead>
@@ -387,6 +378,15 @@
         <tbody id="roster-body"></tbody>
       </table>
     </div>
+
+    <div id="view-calendar" class="view" role="tabpanel" hidden>
+      <div class="cal-nav">
+        <button class="cal-nav-btn" id="cal-prev">← <span data-i18n="cal.prev">prev</span></button>
+        <div class="cal-month-label" id="cal-month-label">—</div>
+        <button class="cal-nav-btn" id="cal-next"><span data-i18n="cal.next">next</span> →</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
   </div>
 
   <script>
@@ -394,6 +394,52 @@
     "use strict";
 
     const WORKER_URL = "https://libraryscience-bibi.lucky-boat-fc8a.workers.dev";
+
+    // The library is in Pacific time. Everything the dashboard displays —
+    // event times, day-of-month bucketing, the "today" highlight, the roster
+    // date chips — is rendered in this timezone regardless of where the
+    // coordinator is viewing from. Two people opening the dashboard from
+    // different timezones see identical data.
+    const LIBRARY_TIMEZONE = "America/Los_Angeles";
+
+    // Return {year, month, day, hour, minute} for a Date, in Pacific time.
+    // Used both for constructing "now in Pacific" and for bucketing events
+    // by the Pacific-time day they fall on.
+    function getPacificParts(date) {
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: LIBRARY_TIMEZONE,
+        year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", hour12: false,
+      }).formatToParts(date);
+      const get = (t) => +parts.find((p) => p.type === t).value;
+      return { year: get("year"), month: get("month"), day: get("day"), hour: get("hour"), minute: get("minute") };
+    }
+
+    // "YYYY-MM-DD" of a Date, in Pacific time. Two events at 11:30pm and
+    // 12:30am Pacific fall on different days here regardless of the browser
+    // clock — that's the whole point.
+    function pacificDayKey(date) {
+      const p = getPacificParts(date);
+      return p.year + "-" + String(p.month).padStart(2, "0") + "-" + String(p.day).padStart(2, "0");
+    }
+
+    // A browser-local Date whose Y/M/D components match the current Pacific
+    // date. Used to initialize the calendar cursor so the initial month is
+    // the Pacific current month (not the browser's).
+    function nowInPacific() {
+      const p = getPacificParts(new Date());
+      return new Date(p.year, p.month - 1, p.day);
+    }
+
+    // "YYYY-MM-DD" from a Date's local components — used for calendar cell
+    // keys, where the Date is constructed from integer Y/M/D and the
+    // components carry the intended (Pacific-aligned) calendar date.
+    function componentKey(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return y + "-" + m + "-" + day;
+    }
 
     // ─── i18n ──────────────────────────────────────────────────────
     const I18N = {
@@ -479,7 +525,7 @@
 
     // ─── State ─────────────────────────────────────────────────────
     let allEvents = [];
-    let calCursor = new Date(); // which month the calendar is displaying
+    let calCursor = nowInPacific(); // which month the calendar is displaying (Pacific)
 
     // ─── Fetch ─────────────────────────────────────────────────────
     async function loadEvents() {
@@ -535,11 +581,11 @@
         grid.appendChild(h);
       }
 
-      // Bucket events by YYYY-MM-DD (in Pacific time)
+      // Bucket events by Pacific-time day (not the browser's local day)
       const eventsByDay = {};
       for (const ev of allEvents) {
         if (!ev.start) continue;
-        const key = ymdKey(new Date(ev.start));
+        const key = pacificDayKey(new Date(ev.start));
         if (!eventsByDay[key]) eventsByDay[key] = [];
         eventsByDay[key].push(ev);
       }
@@ -548,7 +594,7 @@
       const firstOfMonth = new Date(year, month, 1);
       const startDate = new Date(year, month, 1 - firstOfMonth.getDay());
       const today = new Date();
-      const todayKey = ymdKey(today);
+      const todayKey = pacificDayKey(today);
 
       // 6 rows × 7 columns to cover any month layout
       for (let i = 0; i < 42; i++) {
@@ -557,7 +603,11 @@
         const cell = document.createElement("div");
         cell.className = "cal-cell";
         if (d.getMonth() !== month) cell.classList.add("other-month");
-        const key = ymdKey(d);
+        // Cell key: uses the cell's integer components directly. Those
+        // components represent the intended calendar date (Pacific-aligned
+        // because calCursor is Pacific), so this matches pacificDayKey on
+        // events without any TZ math on the cell itself.
+        const key = componentKey(d);
         if (key === todayKey) cell.classList.add("today");
 
         const dayEl = document.createElement("span");
@@ -571,7 +621,10 @@
           evEl.className = "cal-event";
           const evDate = new Date(ev.start);
           if (evDate < today) evEl.classList.add("past");
+          // Force Pacific time on the display — the library's timezone,
+          // not the coordinator's.
           const timeStr = evDate.toLocaleTimeString(getLang() === "es" ? "es-MX" : undefined, {
+            timeZone: LIBRARY_TIMEZONE,
             hour: "numeric", minute: "2-digit",
           });
           evEl.innerHTML =
@@ -591,12 +644,9 @@
       }
     }
 
-    function ymdKey(d) {
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
-      return y + "-" + m + "-" + day;
-    }
+    // Legacy: kept for a moment as a no-op — remove me if nothing calls it
+    // externally. All internal callers now use pacificDayKey or componentKey.
+    function ymdKey(d) { return componentKey(d); }
 
     // ─── Roster view ───────────────────────────────────────────────
     function renderRoster() {
@@ -638,7 +688,10 @@
         const tr = document.createElement("tr");
         const chips = g.sessions.map((s) => {
           const d = new Date(s.start);
-          const label = d.toLocaleDateString(locale, { month: "short", day: "numeric", year: "2-digit" });
+          const label = d.toLocaleDateString(locale, {
+            timeZone: LIBRARY_TIMEZONE,
+            month: "short", day: "numeric", year: "2-digit",
+          });
           const cls = d >= now ? "date-chip future" : "date-chip";
           return '<span class="' + cls + '" title="' + escapeAttr(labelForTooltip(s)) + '">' + escapeHtml(label) + '</span>';
         }).join("");
@@ -656,9 +709,10 @@
     function labelForTooltip(s) {
       const d = new Date(s.start);
       const dateStr = d.toLocaleString(getLang() === "es" ? "es-MX" : undefined, {
+        timeZone: LIBRARY_TIMEZONE,
         weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
       });
-      const bits = [dateStr];
+      const bits = [dateStr + " PT"];
       if (s.activity_label) bits.push(s.activity_label);
       if (s.reason) bits.push("Reason: " + s.reason);
       return bits.join(" · ");
@@ -685,7 +739,7 @@
     }
     function showActiveView() {
       const active = document.querySelector(".tab.active");
-      const name = active ? active.getAttribute("data-tab") : "calendar";
+      const name = active ? active.getAttribute("data-tab") : "roster";
       if (name === "calendar") {
         document.getElementById("view-calendar").hidden = false;
         renderCalendar();
