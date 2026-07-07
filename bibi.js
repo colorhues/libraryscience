@@ -25,7 +25,7 @@
     eventKey: "bibi.event.v2",
   };
 
-  const QUICK_PICK_KEYS = ["read_to_kids", "scan_books", "sort_label", "author_speaker"];
+  const QUICK_PICK_KEYS = ["read_to_kids", "scan_books", "sort_label", "author_speaker", "other"];
 
   // ────────────────────────────────────────────────────────────────────────
   // i18n
@@ -49,6 +49,7 @@
       "qp.scan_books":     "I'd like to scan books.",
       "qp.sort_label":     "I'd like to sort and label books.",
       "qp.author_speaker": "I'd like to help plan author or speaker visits.",
+      "qp.other":          "I'd like to help another way.",
 
       "typing.aria":             "Bibi is typing",
 
@@ -82,6 +83,7 @@
       "qp.scan_books":     "Me gustaría escanear libros.",
       "qp.sort_label":     "Me gustaría ordenar y etiquetar libros.",
       "qp.author_speaker": "Me gustaría ayudar a planear visitas de autores o conferencistas.",
+      "qp.other":          "Me gustaría ayudar de otra forma.",
 
       "typing.aria":             "Bibi está escribiendo",
 
