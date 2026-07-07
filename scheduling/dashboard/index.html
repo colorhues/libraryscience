@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+    // Language pre-paint — same lsai.lang key as the rest of the site.
+    (function () {
+      var TITLES = {
+        en: "Bibi Dashboard · libraryscience.ai",
+        es: "Panel de Bibi · libraryscience.ai",
+      };
+      try {
+        var stored = localStorage.getItem("lsai.lang");
+        var lang = stored
+          || ((navigator.language || "en").toLowerCase().indexOf("es") === 0 ? "es" : "en");
+        if (lang !== "en" && lang !== "es") lang = "en";
+        document.documentElement.setAttribute("data-lang", lang);
+        document.documentElement.setAttribute("lang", lang);
+        document.title = TITLES[lang];
+      } catch (e) {
+        document.documentElement.setAttribute("data-lang", "en");
+      }
+    })();
+  </script>
+  <title>Bibi Dashboard · libraryscience.ai</title>
+  <meta name="description" content="Calendar and roster of volunteers Bibi has scheduled.">
+  <style>
+    :root {
+      --ink: #1F1B16;
+      --ink-2: #4A4741;
+      --muted: #5A544D;
+      --ink-3: #807C75;
+      --cream: #FBF8F2;
+      --parchment: #F4EFE4;
+      --parchment-2: #ECE6DA;
+      --hairline: #D8D2C5;
+      --green: #2F4F3E;
+      --green-soft: rgba(47, 79, 62, 0.10);
+      --green-tint: rgba(47, 79, 62, 0.06);
+      --today: #E4B473;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background:
+        linear-gradient(180deg, #C9DCE8 0%, #E7EEF2 35%, #FBF8F2 100%) no-repeat;
+      min-height: 100vh;
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 40px 24px 96px;
+    }
+
+    /* Top row */
+    .top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .back {
+      font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+      font-size: 12px;
+      color: var(--muted);
+      text-decoration: none;
+      letter-spacing: 0.04em;
+    }
+    .back:hover { color: var(--ink); }
+    .lang-toggle {
+      display: inline-flex; align-items: center; gap: 2px;
+      padding: 2px 4px;
+      border: 1px solid var(--hairline);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.4);
+    }
+    .lang-toggle button {
+      background: none; border: none;
+      padding: 4px 9px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px; letter-spacing: .08em;
+      color: var(--muted);
+      cursor: pointer;
+      border-radius: 999px;
+      transition: color .12s ease, background .12s ease;
+    }
+    .lang-toggle button:hover { color: var(--ink); }
+    .lang-toggle button.active { color: var(--green); background: var(--cream); }
+
+    /* Hero */
+    .hero { margin: 28px 0 28px; }
+    .hero .eyebrow {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      color: var(--green);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .hero h1 {
+      font-size: 32px;
+      line-height: 1.15;
+      margin: 0 0 10px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .hero p {
+      font-size: 15px;
+      line-height: 1.55;
+      color: var(--muted);
+      margin: 0;
+      max-width: 620px;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 6px;
+      border-bottom: 1px solid var(--hairline);
+      margin: 8px 0 20px;
+    }
+    .tab {
+      background: none; border: none;
+      padding: 10px 14px;
+      font-family: inherit; font-size: 14px;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color .12s ease, border-color .12s ease;
+    }
+    .tab:hover { color: var(--ink); }
+    .tab.active {
+      color: var(--green);
+      border-bottom-color: var(--green);
+      font-weight: 600;
+    }
+    .tab .count {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      color: var(--ink-3);
+      margin-left: 6px;
+    }
+    .tab.active .count { color: var(--green); }
+
+    /* Views */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* State panels */
+    .state {
+      padding: 40px 24px;
+      text-align: center;
+      color: var(--ink-3);
+      font-size: 14px;
+      background: rgba(255,255,255,0.4);
+      border: 1px solid var(--hairline);
+      border-radius: 8px;
+    }
+    .state.error { color: #922; border-color: rgba(146,34,34,.3); background: rgba(146,34,34,.05); }
+
+    /* Calendar */
+    .cal-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .cal-nav-btn {
+      background: rgba(255,255,255,0.6);
+      border: 1px solid var(--hairline);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+      color: var(--ink-2);
+      cursor: pointer;
+      transition: background .12s ease;
+    }
+    .cal-nav-btn:hover { background: var(--cream); }
+    .cal-month-label {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      color: var(--ink);
+      text-transform: uppercase;
+    }
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 1px;
+      background: var(--hairline);
+      border: 1px solid var(--hairline);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .cal-head {
+      background: var(--parchment);
+      padding: 8px 6px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      text-align: center;
+    }
+    .cal-cell {
+      background: rgba(255,255,255,0.7);
+      min-height: 92px;
+      padding: 6px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .cal-cell.other-month {
+      background: rgba(236, 230, 218, 0.4);
+      color: var(--ink-3);
+    }
+    .cal-cell.today .cal-day {
+      background: var(--today);
+      color: #fff;
+      border-radius: 999px;
+      padding: 2px 8px;
+      display: inline-block;
+      font-weight: 600;
+    }
+    .cal-day {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      color: var(--ink-2);
+      align-self: flex-start;
+    }
+    .cal-event {
+      background: var(--green-soft);
+      color: var(--green);
+      border-left: 3px solid var(--green);
+      padding: 3px 6px;
+      border-radius: 3px;
+      font-size: 11px;
+      line-height: 1.3;
+      cursor: pointer;
+      transition: background .1s ease;
+    }
+    .cal-event:hover { background: var(--green-tint); background: rgba(47,79,62,0.16); }
+    .cal-event .who { font-weight: 600; }
+    .cal-event .when {
+      display: block;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 0.03em;
+    }
+    .cal-event.past { opacity: 0.55; }
+
+    /* Roster */
+    .roster-summary {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 14px;
+      font-family: "JetBrains Mono", monospace;
+      letter-spacing: 0.04em;
+    }
+    .roster {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(255,255,255,0.5);
+      border: 1px solid var(--hairline);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .roster th, .roster td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--hairline);
+      vertical-align: top;
+    }
+    .roster tr:last-child td { border-bottom: none; }
+    .roster th {
+      background: var(--parchment);
+      font-family: "JetBrains Mono", monospace;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      font-weight: 500;
+    }
+    .roster td.name {
+      font-size: 15px;
+      color: var(--ink);
+      font-weight: 600;
+    }
+    .roster td.count {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 13px;
+      color: var(--green);
+      font-weight: 600;
+    }
+    .roster td.dates {
+      font-size: 13px;
+      color: var(--ink-2);
+    }
+    .date-chip {
+      display: inline-block;
+      padding: 2px 8px;
+      margin: 2px 4px 2px 0;
+      background: var(--parchment-2);
+      border-radius: 999px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      color: var(--ink-2);
+    }
+    .date-chip.future {
+      background: var(--green-soft);
+      color: var(--green);
+    }
+    .reason {
+      display: block;
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    @media (max-width: 700px) {
+      .cal-cell { min-height: 72px; padding: 4px 5px; }
+      .cal-event { font-size: 10px; padding: 2px 4px; }
+      .cal-head { font-size: 9px; padding: 6px 3px; }
+      .roster th, .roster td { padding: 8px 10px; }
+      .hero h1 { font-size: 26px; }
+    }
+    @media (max-width: 500px) {
+      /* On phones, day headers get single letters */
+      .cal-head { padding: 4px 2px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="top-row">
+      <a class="back" href="/scheduling/">← libraryscience.ai / scheduling</a>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <button id="lang-en" type="button">EN</button>
+        <button id="lang-es" type="button">ES</button>
+      </div>
+    </div>
+
+    <div class="hero">
+      <div class="eyebrow" data-i18n="eyebrow">027.8 · Bibi Dashboard</div>
+      <h1 data-i18n="h1">Volunteer schedule</h1>
+      <p data-i18n="lede">Calendar and roster of every volunteer visit Bibi has scheduled.</p>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab active" role="tab" data-tab="calendar" aria-selected="true">
+        <span data-i18n="tab.calendar">Calendar</span>
+      </button>
+      <button class="tab" role="tab" data-tab="roster" aria-selected="false">
+        <span data-i18n="tab.roster">Roster</span>
+        <span class="count" id="roster-count"></span>
+      </button>
+    </div>
+
+    <div id="state-loading" class="state" data-i18n="state.loading">Loading recent visits…</div>
+    <div id="state-error" class="state error" hidden></div>
+
+    <div id="view-calendar" class="view active" role="tabpanel" hidden>
+      <div class="cal-nav">
+        <button class="cal-nav-btn" id="cal-prev">← <span data-i18n="cal.prev">prev</span></button>
+        <div class="cal-month-label" id="cal-month-label">—</div>
+        <button class="cal-nav-btn" id="cal-next"><span data-i18n="cal.next">next</span> →</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+
+    <div id="view-roster" class="view" role="tabpanel" hidden>
+      <div class="roster-summary" id="roster-summary"></div>
+      <table class="roster">
+        <thead>
+          <tr>
+            <th data-i18n="roster.th.volunteer">Volunteer</th>
+            <th data-i18n="roster.th.count">Sessions</th>
+            <th data-i18n="roster.th.dates">Dates</th>
+          </tr>
+        </thead>
+        <tbody id="roster-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    "use strict";
+
+    const WORKER_URL = "https://libraryscience-bibi.lucky-boat-fc8a.workers.dev";
+
+    // ─── i18n ──────────────────────────────────────────────────────
+    const I18N = {
+      en: {
+        "eyebrow": "027.8 · Bibi Dashboard",
+        "h1": "Volunteer schedule",
+        "lede": "Calendar and roster of every volunteer visit Bibi has scheduled.",
+        "tab.calendar": "Calendar",
+        "tab.roster": "Roster",
+        "cal.prev": "prev",
+        "cal.next": "next",
+        "roster.th.volunteer": "Volunteer",
+        "roster.th.count": "Sessions",
+        "roster.th.dates": "Dates",
+        "roster.summary": "{v} volunteer{vs} · {n} session{ns}",
+        "state.loading": "Loading recent visits…",
+        "state.empty": "No scheduled visits yet — check back once Bibi has scheduled someone.",
+        "state.error": "Couldn't load visits: {msg}",
+        "months": ["January","February","March","April","May","June","July","August","September","October","November","December"],
+        "days_full": ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
+        "days_short": ["S","M","T","W","T","F","S"],
+      },
+      es: {
+        "eyebrow": "027.8 · Panel de Bibi",
+        "h1": "Horario de voluntarios",
+        "lede": "Calendario y lista de todas las visitas de voluntarios que Bibi ha agendado.",
+        "tab.calendar": "Calendario",
+        "tab.roster": "Lista",
+        "cal.prev": "anterior",
+        "cal.next": "siguiente",
+        "roster.th.volunteer": "Voluntario",
+        "roster.th.count": "Sesiones",
+        "roster.th.dates": "Fechas",
+        "roster.summary": "{v} voluntario{vs} · {n} sesión{ns}",
+        "state.loading": "Cargando visitas recientes…",
+        "state.empty": "Aún no hay visitas agendadas — vuelve cuando Bibi haya agendado a alguien.",
+        "state.error": "No se pudieron cargar las visitas: {msg}",
+        "months": ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"],
+        "days_full": ["dom","lun","mar","mié","jue","vie","sáb"],
+        "days_short": ["D","L","M","M","J","V","S"],
+      },
+    };
+
+    function getLang() {
+      const l = (document.documentElement.getAttribute("data-lang") || "en").toLowerCase();
+      return l === "es" ? "es" : "en";
+    }
+    function setLang(next) {
+      next = next === "es" ? "es" : "en";
+      try { localStorage.setItem("lsai.lang", next); } catch (_) {}
+      document.documentElement.setAttribute("data-lang", next);
+      document.documentElement.setAttribute("lang", next);
+    }
+    function t(key, vars) {
+      const lang = getLang();
+      let v = (I18N[lang] && I18N[lang][key]);
+      if (v === undefined) v = I18N.en[key];
+      if (v === undefined) return key;
+      if (typeof v !== "string") return v;
+      if (vars) {
+        Object.keys(vars).forEach((k) => {
+          v = v.replace(new RegExp("\\{" + k + "\\}", "g"), vars[k]);
+        });
+      }
+      return v;
+    }
+    function applyTranslations() {
+      document.querySelectorAll("[data-i18n]").forEach((el) => {
+        el.textContent = t(el.getAttribute("data-i18n"));
+      });
+      document.title = getLang() === "es"
+        ? "Panel de Bibi · libraryscience.ai"
+        : "Bibi Dashboard · libraryscience.ai";
+      updateLangUI();
+    }
+    function updateLangUI() {
+      const lang = getLang();
+      const en = document.getElementById("lang-en");
+      const es = document.getElementById("lang-es");
+      if (en) en.classList.toggle("active", lang === "en");
+      if (es) es.classList.toggle("active", lang === "es");
+    }
+
+    // ─── State ─────────────────────────────────────────────────────
+    let allEvents = [];
+    let calCursor = new Date(); // which month the calendar is displaying
+
+    // ─── Fetch ─────────────────────────────────────────────────────
+    async function loadEvents() {
+      const stateLoading = document.getElementById("state-loading");
+      const stateError = document.getElementById("state-error");
+      const viewCal = document.getElementById("view-calendar");
+      const viewRos = document.getElementById("view-roster");
+      stateLoading.hidden = false;
+      stateError.hidden = true;
+      viewCal.hidden = true;
+      viewRos.hidden = true;
+      try {
+        const resp = await fetch(WORKER_URL + "/events", { method: "GET" });
+        if (!resp.ok) {
+          const detail = await resp.text().catch(() => "");
+          throw new Error("HTTP " + resp.status + " — " + detail.slice(0, 200));
+        }
+        const data = await resp.json();
+        allEvents = Array.isArray(data.events) ? data.events : [];
+        stateLoading.hidden = true;
+        if (allEvents.length === 0) {
+          stateError.hidden = false;
+          stateError.classList.remove("error");
+          stateError.textContent = t("state.empty");
+          return;
+        }
+        // Show whichever tab is active
+        showActiveView();
+      } catch (err) {
+        stateLoading.hidden = true;
+        stateError.hidden = false;
+        stateError.classList.add("error");
+        stateError.textContent = t("state.error", { msg: String(err.message || err) });
+      }
+    }
+
+    // ─── Calendar view ─────────────────────────────────────────────
+    function renderCalendar() {
+      const grid = document.getElementById("cal-grid");
+      grid.innerHTML = "";
+
+      const year = calCursor.getFullYear();
+      const month = calCursor.getMonth();
+      const monthName = t("months")[month];
+      document.getElementById("cal-month-label").textContent = monthName + " " + year;
+
+      // Day of week header
+      const days = window.innerWidth < 500 ? t("days_short") : t("days_full");
+      for (let i = 0; i < 7; i++) {
+        const h = document.createElement("div");
+        h.className = "cal-head";
+        h.textContent = days[i];
+        grid.appendChild(h);
+      }
+
+      // Bucket events by YYYY-MM-DD (in Pacific time)
+      const eventsByDay = {};
+      for (const ev of allEvents) {
+        if (!ev.start) continue;
+        const key = ymdKey(new Date(ev.start));
+        if (!eventsByDay[key]) eventsByDay[key] = [];
+        eventsByDay[key].push(ev);
+      }
+
+      // Month grid — start on Sunday of week containing day 1
+      const firstOfMonth = new Date(year, month, 1);
+      const startDate = new Date(year, month, 1 - firstOfMonth.getDay());
+      const today = new Date();
+      const todayKey = ymdKey(today);
+
+      // 6 rows × 7 columns to cover any month layout
+      for (let i = 0; i < 42; i++) {
+        const d = new Date(startDate);
+        d.setDate(startDate.getDate() + i);
+        const cell = document.createElement("div");
+        cell.className = "cal-cell";
+        if (d.getMonth() !== month) cell.classList.add("other-month");
+        const key = ymdKey(d);
+        if (key === todayKey) cell.classList.add("today");
+
+        const dayEl = document.createElement("span");
+        dayEl.className = "cal-day";
+        dayEl.textContent = d.getDate();
+        cell.appendChild(dayEl);
+
+        const evs = eventsByDay[key] || [];
+        for (const ev of evs) {
+          const evEl = document.createElement("div");
+          evEl.className = "cal-event";
+          const evDate = new Date(ev.start);
+          if (evDate < today) evEl.classList.add("past");
+          const timeStr = evDate.toLocaleTimeString(getLang() === "es" ? "es-MX" : undefined, {
+            hour: "numeric", minute: "2-digit",
+          });
+          evEl.innerHTML =
+            '<div class="who"></div>' +
+            '<span class="when"></span>';
+          evEl.querySelector(".who").textContent = ev.volunteer_name || "—";
+          evEl.querySelector(".when").textContent = timeStr + (ev.activity_label ? " · " + ev.activity_label : "");
+          evEl.title = [
+            ev.volunteer_name,
+            ev.activity_label,
+            timeStr,
+            ev.reason ? "Reason: " + ev.reason : "",
+          ].filter(Boolean).join(" · ");
+          cell.appendChild(evEl);
+        }
+        grid.appendChild(cell);
+      }
+    }
+
+    function ymdKey(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return y + "-" + m + "-" + day;
+    }
+
+    // ─── Roster view ───────────────────────────────────────────────
+    function renderRoster() {
+      const body = document.getElementById("roster-body");
+      const summary = document.getElementById("roster-summary");
+      body.innerHTML = "";
+
+      // Group by volunteer_name (case-insensitive, trimmed)
+      const groups = {};
+      for (const ev of allEvents) {
+        const nameRaw = (ev.volunteer_name || "Unknown").trim();
+        const key = nameRaw.toLowerCase();
+        if (!groups[key]) groups[key] = { name: nameRaw, sessions: [] };
+        groups[key].sessions.push(ev);
+      }
+      const rows = Object.values(groups);
+      rows.forEach((g) => {
+        g.sessions.sort((a, b) => new Date(a.start) - new Date(b.start));
+      });
+      rows.sort((a, b) => b.sessions.length - a.sessions.length || a.name.localeCompare(b.name));
+
+      // Update roster count in the tab badge
+      const rosterCount = document.getElementById("roster-count");
+      if (rosterCount) rosterCount.textContent = String(rows.length);
+
+      // Summary line
+      const totalSessions = allEvents.length;
+      const totalVolunteers = rows.length;
+      summary.textContent = t("roster.summary", {
+        v: totalVolunteers,
+        vs: totalVolunteers === 1 ? "" : "s",
+        n: totalSessions,
+        ns: totalSessions === 1 ? "" : "s",
+      });
+
+      const now = new Date();
+      const locale = getLang() === "es" ? "es-MX" : undefined;
+      for (const g of rows) {
+        const tr = document.createElement("tr");
+        const chips = g.sessions.map((s) => {
+          const d = new Date(s.start);
+          const label = d.toLocaleDateString(locale, { month: "short", day: "numeric", year: "2-digit" });
+          const cls = d >= now ? "date-chip future" : "date-chip";
+          return '<span class="' + cls + '" title="' + escapeAttr(labelForTooltip(s)) + '">' + escapeHtml(label) + '</span>';
+        }).join("");
+        // If any session has a reason, show the most recent one below the chips
+        const withReason = g.sessions.filter((s) => s.reason).slice(-1)[0];
+        const reasonHtml = withReason ? '<span class="reason">"' + escapeHtml(withReason.reason) + '"</span>' : "";
+        tr.innerHTML =
+          '<td class="name">' + escapeHtml(g.name) + '</td>' +
+          '<td class="count">' + g.sessions.length + '</td>' +
+          '<td class="dates">' + chips + reasonHtml + '</td>';
+        body.appendChild(tr);
+      }
+    }
+
+    function labelForTooltip(s) {
+      const d = new Date(s.start);
+      const dateStr = d.toLocaleString(getLang() === "es" ? "es-MX" : undefined, {
+        weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+      });
+      const bits = [dateStr];
+      if (s.activity_label) bits.push(s.activity_label);
+      if (s.reason) bits.push("Reason: " + s.reason);
+      return bits.join(" · ");
+    }
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+      }[c]));
+    }
+    function escapeAttr(s) { return escapeHtml(s); }
+
+    // ─── Tab switching ─────────────────────────────────────────────
+    function activateTab(name) {
+      document.querySelectorAll(".tab").forEach((btn) => {
+        const active = btn.getAttribute("data-tab") === name;
+        btn.classList.toggle("active", active);
+        btn.setAttribute("aria-selected", active ? "true" : "false");
+      });
+      document.querySelectorAll(".view").forEach((v) => {
+        v.classList.toggle("active", v.id === "view-" + name);
+        v.hidden = v.id !== "view-" + name;
+      });
+      showActiveView();
+    }
+    function showActiveView() {
+      const active = document.querySelector(".tab.active");
+      const name = active ? active.getAttribute("data-tab") : "calendar";
+      if (name === "calendar") {
+        document.getElementById("view-calendar").hidden = false;
+        renderCalendar();
+      } else {
+        document.getElementById("view-roster").hidden = false;
+        renderRoster();
+      }
+    }
+
+    // ─── Wire up ───────────────────────────────────────────────────
+    document.querySelectorAll(".tab").forEach((btn) => {
+      btn.addEventListener("click", () => activateTab(btn.getAttribute("data-tab")));
+    });
+    document.getElementById("cal-prev").addEventListener("click", () => {
+      calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() - 1, 1);
+      renderCalendar();
+    });
+    document.getElementById("cal-next").addEventListener("click", () => {
+      calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() + 1, 1);
+      renderCalendar();
+    });
+    document.getElementById("lang-en").addEventListener("click", () => setLang("en"));
+    document.getElementById("lang-es").addEventListener("click", () => setLang("es"));
+
+    // Language changes: re-translate + re-render
+    try {
+      const obs = new MutationObserver(() => {
+        applyTranslations();
+        if (allEvents.length > 0) showActiveView();
+      });
+      obs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-lang"] });
+    } catch (_) {}
+
+    // Cross-tab sync
+    window.addEventListener("storage", (e) => {
+      if (e.key === "lsai.lang" && (e.newValue === "en" || e.newValue === "es")) {
+        if (e.newValue !== getLang()) setLang(e.newValue);
+      }
+    });
+
+    // Re-render calendar when viewport crosses the phone/tablet break
+    let lastWidth = window.innerWidth;
+    window.addEventListener("resize", () => {
+      const crossed = (lastWidth < 500) !== (window.innerWidth < 500);
+      lastWidth = window.innerWidth;
+      if (crossed && document.querySelector(".tab.active")?.getAttribute("data-tab") === "calendar") {
+        renderCalendar();
+      }
+    });
+
+    // Initial paint
+    applyTranslations();
+    updateLangUI();
+    loadEvents();
+  })();
+  </script>
+</body>
+</html>
