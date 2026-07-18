@@ -1,5 +1,5 @@
 ---
-title: "Fwd: Week 5 Summer Update: Storytelling"
+title: "Week 5 Summer Update: Storytelling"
 date: 2026-07-18
 tags: [reflection]
 ---
