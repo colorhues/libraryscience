@@ -117,6 +117,19 @@
 
   *, *::before, *::after { box-sizing: border-box; }
 
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
   html, body { margin: 0; padding: 0; }
   body {
     background: var(--paper-1);
@@ -156,7 +169,7 @@
      illustration on the reference site does. */
   header.sky {
     position: relative;
-    min-height: 620px;
+    min-height: clamp(520px, 82vh, 720px);
     background: linear-gradient(
       to bottom,
       var(--sky-top) 0%,
@@ -168,7 +181,6 @@
     border-bottom: 1px solid var(--rule);
     transition: background 1s ease;
   }
-  @media (max-width: 900px) { header.sky { min-height: 560px; } }
   @media (max-width: 640px) { header.sky { min-height: 480px; } }
 
   .sky-canvas {
@@ -198,9 +210,9 @@
   .nav {
     position: relative; z-index: 2;
     width: 100%;
-    max-width: 1180px;
+    max-width: 1120px;
     margin: 0 auto;
-    padding: 18px 28px 0;
+    padding: 20px 28px 0;
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -252,59 +264,55 @@
   .hero-copy {
     position: relative; z-index: 2;
     width: 100%;
-    max-width: 1180px;
+    max-width: 1120px;
     margin: 0 auto;
-    padding: 44px 28px 0;
+    padding: 24px 28px 0;
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
   .hero-copy .hero-eyebrow {
-    display: flex; gap: 10px; align-items: center;
-    margin-bottom: 18px; flex-wrap: wrap;
+    margin-bottom: 20px;
   }
-  .hero-copy .hero-eyebrow .pill {
-    font-family: var(--font-mono);
-    font-size: 10.5px;
-    background: var(--sky-chip-bg);
-    border: 1px solid var(--sky-chip-border);
-    padding: 3px 8px;
-    border-radius: 4px;
-    color: var(--sky-text);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-  .hero-copy .hero-eyebrow .mono { color: var(--sky-text-2); }
-  .hero-copy h1 {
-    font-size: 38px;
-    font-weight: 700;
-    margin-bottom: 16px;
-    max-width: 600px;
-    line-height: 1.16;
-    color: var(--sky-text);
-  }
-  @media (max-width: 640px) { .hero-copy h1 { font-size: 27px; } }
-  .hero-copy > p {
-    font-size: 15.5px;
+  .hero-copy .hero-eyebrow .mono {
     color: var(--sky-text-2);
-    max-width: 500px;
-    margin: 0;
-    line-height: 1.6;
+    font-size: 11.5px;
   }
-  .hero-actions { margin-top: 26px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .hero-copy h1 {
+    font-size: clamp(30px, 4.4vw, 46px);
+    font-weight: 700;
+    margin-bottom: 18px;
+    max-width: 15em;
+    line-height: 1.12;
+    letter-spacing: -0.025em;
+    color: var(--sky-text);
+  }
+  .hero-copy > p {
+    font-size: 16px;
+    color: var(--sky-text-2);
+    max-width: 520px;
+    margin: 0;
+    line-height: 1.65;
+  }
+  .hero-actions { margin-top: 30px; }
   .hero-cta {
     display: inline-block;
     background: var(--accent);
     color: #fff;
     font-family: var(--font-body);
-    font-size: 14px;
+    font-size: 14.5px;
     font-weight: 600;
-    padding: 13px 22px;
-    border-radius: 8px;
+    padding: 14px 24px;
+    border-radius: 999px;
     text-decoration: none;
-    transition: background .15s ease, transform .15s ease;
+    transition: background .15s ease, transform .15s ease, box-shadow .15s ease;
   }
-  .hero-cta:hover { background: var(--accent-hover); transform: translateY(-1px); }
-  .hero-actions .hero-dots { display: flex; gap: 6px; }
-  .hero-actions .hero-dots span { width: 7px; height: 7px; border-radius: 50%; display: block; }
+  .hero-cta:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(31, 58, 82, 0.22);
+  }
 
   /* --- Static illustration, anchored to the bottom of the sky --- */
   .hero-illustration {
@@ -323,36 +331,56 @@
      numbered section sequence; it's a signpost, not a chapter. */
   .info-band { background: var(--accent); }
   .info-band-inner {
-    max-width: 1180px;
+    max-width: 1120px;
     margin: 0 auto;
+    padding: 56px 28px;
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    gap: 48px;
+    align-items: start;
   }
-  .info-col { padding: 34px 30px; }
-  .info-col h3 {
+  .info-band h3 {
     font-family: var(--font-display);
-    font-size: 15px;
+    font-size: 24px;
     font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.25;
     color: #fff;
-    margin-bottom: 16px;
+    margin: 0;
   }
-  .info-col-about p { font-size: 13.5px; color: rgba(255,255,255,0.82); line-height: 1.65; margin: 0 0 12px; }
-  .info-col-about p:last-child { margin-bottom: 0; }
+  .info-band-text p {
+    font-size: 15px;
+    color: rgba(255,255,255,0.85);
+    line-height: 1.7;
+    margin: 0 0 14px;
+    max-width: 62ch;
+  }
+  .info-band-text p:last-child { margin-bottom: 0; }
+  @media (max-width: 760px) {
+    .info-band-inner { grid-template-columns: 1fr; gap: 18px; padding: 44px 18px; }
+  }
 
   /* === Main column ==================================== */
   main {
     flex: 1;
     width: 100%;
-    max-width: 1100px;
+    max-width: 1120px;
     margin: 0 auto;
     padding: 0 28px;
   }
   @media (max-width: 640px) { main { padding: 0 18px; } }
 
-  section { padding: 48px 0 36px; }
+  section { padding: 68px 0 56px; }
   section + section { border-top: 1px solid var(--rule); }
+  @media (max-width: 640px) { section { padding: 48px 0 40px; } }
 
-  .section-head { margin-bottom: 22px; }
-  .section-head .mono { margin-bottom: 6px; display: block; }
-  .section-head h2 { font-size: 20px; }
+  .section-head { margin-bottom: 30px; }
+  .section-head .mono { margin-bottom: 10px; display: block; }
+  .section-head h2 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
 
   /* === Updates ======================================== */
   .updates-list {
@@ -382,9 +410,9 @@
     color: var(--ink-3);
   }
   .update h3 {
-    font-size: 16px;
+    font-size: 17px;
     margin: 0 0 8px;
-    letter-spacing: -0.005em;
+    letter-spacing: -0.01em;
     transition: color .15s ease;
   }
   .update p {
@@ -439,14 +467,15 @@
   }
 
   /* === Tools ========================================== */
+  .tool-grid { display: grid; gap: 14px; }
   .tool-card {
     background: var(--paper-2);
     border: 1px solid var(--rule-strong);
     border-radius: var(--radius);
-    padding: 22px 24px;
+    padding: 26px 28px;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 20px;
+    gap: 24px;
     align-items: center;
     text-decoration: none;
     color: inherit;
@@ -457,14 +486,15 @@
     border-color: var(--accent);
   }
   @media (max-width: 640px) {
-    .tool-card { grid-template-columns: 1fr; }
+    .tool-card { grid-template-columns: 1fr; padding: 20px; gap: 14px; }
   }
-  .tool-card h3 { font-size: 17px; margin: 0 0 6px; }
+  .tool-card h3 { font-size: 18px; margin: 0 0 7px; letter-spacing: -0.01em; }
   .tool-card p {
     font-size: 14px;
     color: var(--ink-2);
-    margin: 0 0 12px;
-    line-height: 1.55;
+    margin: 0 0 14px;
+    line-height: 1.6;
+    max-width: 68ch;
   }
   .tool-meta {
     display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
@@ -481,20 +511,26 @@
     background: var(--green);
   }
   .open-btn {
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    padding: 11px 18px;
-    border-radius: 7px;
-    font-size: 13.5px;
-    font-weight: 500;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: none;
+    border: 1px solid var(--rule-strong);
+    padding: 9px 16px;
+    border-radius: 999px;
     cursor: pointer;
-    font-family: var(--font-body);
     white-space: nowrap;
-    transition: background .15s ease;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
   }
-  .open-btn:hover { background: var(--accent-hover); }
-  @media (max-width: 640px) { .open-btn { width: 100%; } }
+  .tool-card:hover .open-btn {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  [data-theme="dark"] .tool-card:hover .open-btn { color: #16181C; }
+  @media (max-width: 640px) { .open-btn { text-align: center; } }
 
   .tool-placeholder {
     margin-top: 14px;
@@ -538,17 +574,17 @@
   /* === Footer ========================================= */
   footer.foot {
     border-top: 1px solid var(--rule);
-    padding: 22px 28px;
+    padding: 28px;
     background: var(--paper-1);
     font-family: var(--font-mono);
     font-size: 10.5px;
     letter-spacing: 0.06em;
     color: var(--ink-3);
     text-transform: uppercase;
-    margin-top: 24px;
+    margin-top: 32px;
   }
   .foot-inner {
-    max-width: 1100px;
+    max-width: 1120px;
     margin: 0 auto;
     display: flex;
     justify-content: space-between;
@@ -660,35 +696,28 @@
 
     <div class="hero-copy">
       <div class="hero-eyebrow">
-        <span class="pill" data-i18n="hero.pill">A project</span>
-        <span class="mono" data-i18n="hero.eyebrow">est. 2026 · east palo alto, ca</span>
+        <span class="mono" data-i18n="hero.eyebrow">A volunteer project · Los Robles Magnet Academy · East Palo Alto, CA</span>
       </div>
       <h1 data-i18n="hero.h1">Learning library science from the inside of an elementary school — and seeing what AI can lend to the work.</h1>
       <p data-i18n="hero.p">A record of one volunteer's experience contributing to and learning from a primary-school library. Field notes, observations, and the small tools built along the way.</p>
       <div class="hero-actions">
         <a class="hero-cta" href="#schedule" data-i18n="hero.cta">Schedule a volunteer visit</a>
-        <div class="hero-dots" aria-hidden="true">
-          <span style="background:#F4C842"></span>
-          <span style="background:#F08FB6"></span>
-          <span style="background:#7AAFE8"></span>
-          <span style="background:#5DB07F"></span>
-        </div>
       </div>
     </div>
 
     <div class="hero-illustration" aria-hidden="true">
       <svg viewBox="0 0 1600 480" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
-        <path d="M0,480 L0,410 C 200,378 350,338 520,350 C 720,364 800,318 1000,330 C 1200,342 1320,300 1600,338 L1600,480 Z" fill="#B7C99A"/>
-        <path d="M0,480 L0,452 C 260,432 520,444 780,436 C 1000,430 1260,444 1600,428 L1600,480 Z" fill="#93B47C"/>
-
+        <path d="M0,480 L0,404 C 220,372 430,352 660,362 C 920,373 1120,332 1340,346 C 1450,353 1530,344 1600,350 L1600,480 Z" fill="#C6D3AE"/>
+        <path d="M0,480 L0,442 C 260,416 520,428 800,418 C 1080,408 1320,430 1600,414 L1600,480 Z" fill="#A9C08D"/>
+        <path d="M0,480 L0,464 C 320,450 660,458 980,452 C 1240,447 1440,456 1600,450 L1600,480 Z" fill="#8CAE74"/>
       </svg>
     </div>
   </header>
 
   <section class="info-band">
-    <div class="info-band-inner">
-      <div class="info-col info-col-about" id="about">
-        <h3 data-i18n="about.h2">An experiment in two parts</h3>
+    <div class="info-band-inner" id="about">
+      <h3 data-i18n="about.h2">An experiment in two parts</h3>
+      <div class="info-band-text">
         <p data-i18n="about.p1">This site documents what it's like to learn library science as it's practiced in a primary-school educational setting — and to experiment, in parallel, with how AI tools can support the healthy execution of that work.</p>
         <p data-i18n="about.p2">The Updates section carries unfiltered field notes from the experience. The Tools section indexes the small utilities built along the way to make library work go a little smoother for the people doing it.</p>
       </div>
@@ -721,6 +750,8 @@
         <h2 data-i18n="tools.h2">Built for the work</h2>
       </div>
 
+      <div class="tool-grid">
+
       <a class="tool-card" href="/marc-file-creator/">
         <div>
           <h3 data-i18n="tools.marc.title">MARC File Creator</h3>
@@ -734,7 +765,7 @@
         <span class="open-btn" aria-hidden="true" data-i18n="tools.open">Open →</span>
       </a>
 
-      <a class="tool-card" href="/scheduling/" style="margin-top: 12px;">
+      <a class="tool-card" href="/scheduling/">
         <div>
           <h3 data-i18n="tools.bibi.title">Bibi · Volunteer Scheduling</h3>
           <p data-i18n="tools.bibi.desc">Chat with Bibi to find a time to come help at the library — read to kids, scan books, sort and label, or help plan an author visit. Bibi confirms a slot conversationally and sends a Google Calendar invite with the address and check-in details.</p>
@@ -747,7 +778,7 @@
         <span class="open-btn" aria-hidden="true" data-i18n="tools.open">Open →</span>
       </a>
 
-      <a class="tool-card" href="https://colorhues-biblio-buddy.static.hf.space/" target="_blank" rel="noopener" style="margin-top: 12px;">
+      <a class="tool-card" href="https://colorhues-biblio-buddy.static.hf.space/" target="_blank" rel="noopener">
         <div>
           <h3 data-i18n="tools.buddy.title">Biblio Buddy · Library Companion</h3>
           <p data-i18n="tools.buddy.desc">A bilingual library companion running on a Reachy Mini robot. Kids ask questions in English or Spanish and get book recommendations pulled from the librarian's uploaded catalog. Configuration — hours, rules, voice, book list — sits behind a password. Kids never see the setup.</p>
@@ -760,7 +791,7 @@
         <span class="open-btn" aria-hidden="true" data-i18n="tools.open">Open →</span>
       </a>
 
-      <a class="tool-card" href="/scheduling/dashboard/" style="margin-top: 12px;">
+      <a class="tool-card" href="/scheduling/dashboard/">
         <div>
           <h3 data-i18n="tools.dashboard.title">Volunteer Dashboard</h3>
           <p data-i18n="tools.dashboard.desc">A roster of every volunteer Bibi has scheduled — session counts, dates, and reasons for visiting — plus a monthly calendar of past and upcoming visits. Reads live from Google Calendar so every coordinator sees the same data. For coordinators.</p>
@@ -772,6 +803,8 @@
         </div>
         <span class="open-btn" aria-hidden="true" data-i18n="tools.open">Open →</span>
       </a>
+
+      </div>
 
       <div class="tool-placeholder" data-i18n="tools.placeholder">More tools as the work calls for them.</div>
     </section>
@@ -994,8 +1027,7 @@ const I18N = {
     'theme.dark':  'Dark',
     'theme.title': 'Switch theme',
 
-    'hero.pill': 'A project',
-    'hero.eyebrow': 'est. 2026 · east palo alto, ca',
+    'hero.eyebrow': 'A volunteer project · Los Robles Magnet Academy · East Palo Alto, CA',
     'hero.h1': 'Learning library science from the inside of an elementary school — and seeing what AI can lend to the work.',
     'hero.p': "A record of one volunteer's experience contributing to and learning from a primary-school library. Field notes, observations, and the small tools built along the way.",
     'hero.cta': 'Schedule a volunteer visit',
@@ -1053,8 +1085,7 @@ const I18N = {
     'theme.dark':  'Oscuro',
     'theme.title': 'Cambiar tema',
 
-    'hero.pill': 'Un proyecto',
-    'hero.eyebrow': 'desde 2026 · east palo alto, ca',
+    'hero.eyebrow': 'Un proyecto de voluntariado · Los Robles Magnet Academy · East Palo Alto, CA',
     'hero.h1': 'Aprendiendo bibliotecología desde dentro de una escuela primaria — y viendo qué puede aportar la IA al trabajo.',
     'hero.p': 'Un registro de la experiencia de un voluntario que contribuye y aprende en la biblioteca de una escuela primaria. Apuntes de campo, observaciones y las pequeñas herramientas construidas en el camino.',
     'hero.cta': 'Programa una visita de voluntariado',
