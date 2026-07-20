@@ -111,6 +111,9 @@
     border-color: rgba(209, 122, 85, 0.35);
     color: #E4926E;
   }
+  /* --accent becomes a light tan in dark mode, which won't hold white
+     text — pin the info band to a fixed dark navy instead. */
+  [data-theme="dark"] .info-band { background: #1B1E24; }
 
   *, *::before, *::after { box-sizing: border-box; }
 
@@ -146,10 +149,14 @@
 
   .app { min-height: 100vh; display: flex; flex-direction: column; }
 
-  /* === Sky header ===================================== */
+  /* === Hero (sky) ======================================
+     Same time-of-day engine as before, now tall enough to hold a
+     static, kid-friendly reading-nook scene anchored to the bottom.
+     Not sticky — the whole hero scrolls away naturally, the way the
+     illustration on the reference site does. */
   header.sky {
-    position: sticky; top: 0; z-index: 10;
-    height: 140px;
+    position: relative;
+    min-height: 620px;
     background: linear-gradient(
       to bottom,
       var(--sky-top) 0%,
@@ -157,11 +164,12 @@
       var(--sky-horizon) 100%
     );
     overflow: hidden;
-    display: flex; flex-direction: column; justify-content: flex-end;
+    display: flex; flex-direction: column;
     border-bottom: 1px solid var(--rule);
     transition: background 1s ease;
   }
-  @media (max-width: 700px) { header.sky { height: 110px; } }
+  @media (max-width: 900px) { header.sky { min-height: 560px; } }
+  @media (max-width: 640px) { header.sky { min-height: 480px; } }
 
   .sky-canvas {
     position: absolute; inset: 0;
@@ -186,14 +194,39 @@
     50%      { opacity: 1; }
   }
 
+  /* Sun / moon — cross-fades and drifts using the same hour value
+     that drives the gradient and the stars, so all three always
+     agree with the clock. */
+  .sky-cel {
+    position: absolute;
+    left: 50%; top: 20%;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: left 4s linear, top 4s linear, opacity 4s ease;
+    pointer-events: none;
+  }
+  .sky-cel-sun {
+    background: radial-gradient(circle at 35% 32%, #FFF7DC, #FFD27A 55%, #FFAE5E 100%);
+    box-shadow: 0 0 70px 20px rgba(255, 197, 120, 0.45);
+    opacity: var(--cel-sun-opacity, 0);
+  }
+  .sky-cel-moon {
+    background: radial-gradient(circle at 35% 32%, #FBF7EE, #ECE6DA 60%, #C9C4B6 100%);
+    box-shadow: 0 0 46px 16px rgba(236, 230, 218, 0.28);
+    opacity: var(--cel-moon-opacity, 0);
+  }
+  @media (max-width: 640px) { .sky-cel { width: 38px; height: 38px; } }
+
+  /* --- Nav: icon-labeled links on top of the sky --- */
   .nav {
-    position: relative; z-index: 1;
+    position: relative; z-index: 2;
     width: 100%;
-    max-width: 1100px;
+    max-width: 1180px;
     margin: 0 auto;
-    padding: 14px 28px;
+    padding: 18px 28px 0;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 16px;
   }
@@ -205,6 +238,7 @@
     letter-spacing: -0.02em;
     text-decoration: none;
     display: flex; align-items: center; gap: 8px;
+    padding-top: 6px;
   }
   .nav-brand .tag {
     font-family: var(--font-mono);
@@ -217,36 +251,147 @@
     letter-spacing: 0.06em;
     font-weight: 500;
   }
-  .nav-links {
-    display: flex;
-    gap: 22px;
-    font-size: 13px;
-    color: var(--sky-text-2);
-    align-items: center;
-  }
-  .nav-links a {
+  .nav-icons { display: flex; gap: 30px; align-items: flex-start; }
+  .nav-icon-link {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
     text-decoration: none;
-    padding: 4px 0;
     color: var(--sky-text-2);
-    transition: color .15s ease;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    transition: color .15s ease, transform .15s ease;
   }
-  .nav-links a:hover { color: var(--sky-text); }
-  .nav-cta {
+  .nav-icon-link svg {
+    width: 20px; height: 20px;
+    stroke: currentColor;
+  }
+  .nav-icon-link:hover { color: var(--sky-text); transform: translateY(-2px); }
+  .nav-utility { display: flex; align-items: center; gap: 10px; padding-top: 4px; }
+
+  @media (max-width: 760px) { .nav-icons { display: none; } }
+  @media (max-width: 640px) { .nav { padding: 14px 18px 0; } }
+
+  /* --- Hero copy: eyebrow, headline, CTA --- */
+  .hero-copy {
+    position: relative; z-index: 2;
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 44px 28px 0;
+    flex: 1;
+  }
+  .hero-copy .hero-eyebrow {
+    display: flex; gap: 10px; align-items: center;
+    margin-bottom: 18px; flex-wrap: wrap;
+  }
+  .hero-copy .hero-eyebrow .pill {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    background: var(--sky-chip-bg);
+    border: 1px solid var(--sky-chip-border);
+    padding: 3px 8px;
+    border-radius: 4px;
+    color: var(--sky-text);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .hero-copy .hero-eyebrow .mono { color: var(--sky-text-2); }
+  .hero-copy h1 {
+    font-size: 38px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    max-width: 600px;
+    line-height: 1.16;
+    color: var(--sky-text);
+  }
+  @media (max-width: 640px) { .hero-copy h1 { font-size: 27px; } }
+  .hero-copy > p {
+    font-size: 15.5px;
+    color: var(--sky-text-2);
+    max-width: 500px;
+    margin: 0;
+    line-height: 1.6;
+  }
+  .hero-actions { margin-top: 26px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .hero-cta {
+    display: inline-block;
     background: var(--accent);
-    color: #fff !important;
+    color: #fff;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 13px 22px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background .15s ease, transform .15s ease;
+  }
+  .hero-cta:hover { background: var(--accent-hover); transform: translateY(-1px); }
+  .hero-actions .hero-dots { display: flex; gap: 6px; }
+  .hero-actions .hero-dots span { width: 7px; height: 7px; border-radius: 50%; display: block; }
+
+  /* --- Static illustration, anchored to the bottom of the sky --- */
+  .hero-illustration {
+    position: relative; z-index: 1;
+    width: 100%;
+    height: 260px;
+    margin-top: 24px;
+  }
+  .hero-illustration svg { display: block; width: 100%; height: 100%; }
+  @media (max-width: 900px) { .hero-illustration { height: 210px; } }
+  @media (max-width: 640px) { .hero-illustration { height: 160px; } }
+
+  /* === Info band ========================================
+     Bridges the illustrated hero and the quieter parchment pages
+     below — orientation for a first-time visitor. Not part of the
+     numbered section sequence; it's a signpost, not a chapter. */
+  .info-band { background: var(--accent); }
+  .info-band-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+  }
+  .info-col { padding: 34px 30px; border-left: 1px solid rgba(255,255,255,0.12); }
+  .info-col:first-child { border-left: none; }
+  .info-col h3 {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 16px;
+  }
+  .info-col-about p { font-size: 13.5px; color: rgba(255,255,255,0.82); line-height: 1.65; margin: 0 0 12px; }
+  .info-col-about p:last-child { margin-bottom: 0; }
+  .hours-row {
+    display: flex; justify-content: space-between;
+    font-family: var(--font-mono);
     font-size: 12.5px;
-    padding: 7px 12px !important;
-    border-radius: 6px;
-    font-weight: 500;
+    letter-spacing: 0.04em;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.9);
+  }
+  .hours-row:last-of-type { border-bottom: none; }
+  .hours-cta {
+    display: block;
+    margin-top: 18px;
+    background: #fff;
+    color: #1F3A52;
+    text-align: center;
+    font-weight: 600;
+    font-size: 13.5px;
+    padding: 11px 14px;
+    border-radius: 7px;
     text-decoration: none;
     transition: background .15s ease;
   }
-  .nav-cta:hover { background: var(--accent-hover); }
-
-  @media (max-width: 640px) {
-    .nav { padding: 12px 18px; flex-wrap: wrap; }
-    .nav-links { gap: 14px; font-size: 12.5px; }
-    .nav-cta { font-size: 12px; padding: 6px 10px !important; }
+  .hours-cta:hover { background: var(--paper-2); }
+  .hours-addr { margin-top: 12px; font-size: 11.5px; color: rgba(255,255,255,0.6); text-align: center; }
+  @media (max-width: 760px) {
+    .info-band-inner { grid-template-columns: 1fr; }
+    .info-col { border-left: none; border-top: 1px solid rgba(255,255,255,0.12); }
+    .info-col:first-child { border-top: none; }
   }
 
   /* === Main column ==================================== */
@@ -265,59 +410,6 @@
   .section-head { margin-bottom: 22px; }
   .section-head .mono { margin-bottom: 6px; display: block; }
   .section-head h2 { font-size: 20px; }
-
-  /* === Hero =========================================== */
-  .hero {
-    padding-top: 56px;
-    padding-bottom: 8px;
-  }
-  .hero-eyebrow {
-    display: flex; gap: 10px; align-items: center;
-    margin-bottom: 18px; flex-wrap: wrap;
-  }
-  .hero-eyebrow .pill {
-    font-family: var(--font-mono);
-    font-size: 10.5px;
-    background: var(--paper-2);
-    border: 1px solid var(--rule);
-    padding: 3px 8px;
-    border-radius: 4px;
-    color: var(--ink-2);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-  .hero h1 {
-    font-size: 32px;
-    font-weight: 700;
-    margin-bottom: 16px;
-    max-width: 640px;
-    line-height: 1.18;
-  }
-  @media (max-width: 640px) { .hero h1 { font-size: 26px; } }
-  .hero p {
-    font-size: 15.5px;
-    color: var(--ink-2);
-    max-width: 580px;
-    margin: 0;
-    line-height: 1.6;
-  }
-  .hero-dots {
-    margin-top: 36px;
-    display: flex; gap: 6px;
-  }
-  .hero-dots span {
-    width: 6px; height: 6px; border-radius: 50%;
-  }
-
-  /* === About ========================================== */
-  .about p {
-    font-size: 15px;
-    color: var(--ink-2);
-    max-width: 620px;
-    margin: 0 0 14px;
-    line-height: 1.65;
-  }
-  .about p:last-child { margin-bottom: 0; }
 
   /* === Updates ======================================== */
   .updates-list {
@@ -591,19 +683,28 @@
 <div class="app">
 
   <header class="sky">
-    <div class="sky-canvas">
+    <div class="sky-canvas" aria-hidden="true">
       <div class="sky-stars" id="sky-stars"></div>
+      <div class="sky-cel sky-cel-sun" id="cel-sun"></div>
+      <div class="sky-cel sky-cel-moon" id="cel-moon"></div>
     </div>
+
     <nav class="nav">
       <a class="nav-brand" href="/">
         <span class="tag">001</span>
         libraryscience.ai
       </a>
-      <div class="nav-links">
-        <a href="#about" data-i18n="nav.about">About</a>
-        <a href="#updates" data-i18n="nav.updates">Updates</a>
-        <a href="#tools" data-i18n="nav.tools">Tools</a>
-        <span class="nav-spacer" aria-hidden="true"></span>
+      <div class="nav-icons">
+        <a class="nav-icon-link" href="#updates">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v14"/><path d="M6 21.5A2 2 0 0 1 4 19.5H17a2 2 0 0 0 2 2z"/><path d="M8 7h7M8 11h7"/></svg>
+          <span data-i18n="nav.updates">Field notes</span>
+        </a>
+        <a class="nav-icon-link" href="#tools">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2-2z"/></svg>
+          <span data-i18n="nav.tools">Tools</span>
+        </a>
+      </div>
+      <div class="nav-utility">
         <div class="lang-toggle" role="group" aria-label="Language">
           <button type="button" class="lang-btn" data-lang-btn="en" aria-pressed="true">EN</button>
           <span class="lang-sep" aria-hidden="true">·</span>
@@ -615,32 +716,61 @@
         </button>
       </div>
     </nav>
-  </header>
 
-  <main>
-
-    <section class="hero">
+    <div class="hero-copy">
       <div class="hero-eyebrow">
         <span class="pill" data-i18n="hero.pill">A project</span>
         <span class="mono" data-i18n="hero.eyebrow">est. 2026 · east palo alto, ca</span>
       </div>
       <h1 data-i18n="hero.h1">Learning library science from the inside of an elementary school — and seeing what AI can lend to the work.</h1>
       <p data-i18n="hero.p">A record of one volunteer's experience contributing to and learning from a primary-school library. Field notes, observations, and the small tools built along the way.</p>
-      <div class="hero-dots" aria-hidden="true">
-        <span style="background:#F4C842"></span>
-        <span style="background:#F08FB6"></span>
-        <span style="background:#7AAFE8"></span>
-        <span style="background:#5DB07F"></span>
+      <div class="hero-actions">
+        <a class="hero-cta" href="#schedule" data-i18n="hero.cta">Schedule a volunteer visit</a>
+        <div class="hero-dots" aria-hidden="true">
+          <span style="background:#F4C842"></span>
+          <span style="background:#F08FB6"></span>
+          <span style="background:#7AAFE8"></span>
+          <span style="background:#5DB07F"></span>
+        </div>
       </div>
-    </section>
+    </div>
 
-    <section id="about" class="about">
-      <div class="section-head">
-        <span class="mono" data-i18n="about.eyebrow">002 · About</span>
-        <h2 data-i18n="about.h2">An experiment in two parts</h2>
+    <div class="hero-illustration" aria-hidden="true">
+      <svg viewBox="0 0 1600 480" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,480 L0,410 C 200,378 350,338 520,350 C 720,364 800,318 1000,330 C 1200,342 1320,300 1600,338 L1600,480 Z" fill="#B7C99A"/>
+        <path d="M0,480 L0,452 C 260,432 520,444 780,436 C 1000,430 1260,444 1600,428 L1600,480 Z" fill="#93B47C"/>
+
+      </svg>
+    </div>
+  </header>
+
+  <section class="info-band">
+    <div class="info-band-inner">
+      <div class="info-col info-col-about" id="about">
+        <h3 data-i18n="about.h2">An experiment in two parts</h3>
+        <p data-i18n="about.p1">This site documents what it's like to learn library science as it's practiced in a primary-school educational setting — and to experiment, in parallel, with how AI tools can support the healthy execution of that work.</p>
+        <p data-i18n="about.p2">The Updates section carries unfiltered field notes from the experience. The Tools section indexes the small utilities built along the way to make library work go a little smoother for the people doing it.</p>
       </div>
-      <p data-i18n="about.p1">This site documents what it's like to learn library science as it's practiced in a primary-school educational setting — and to experiment, in parallel, with how AI tools can support the healthy execution of that work.</p>
-      <p data-i18n="about.p2">The Updates section carries unfiltered field notes from the experience. The Tools section indexes the small utilities built along the way to make library work go a little smoother for the people doing it.</p>
+      <div class="info-col">
+        <h3 data-i18n="info.hours.title">Summer volunteer visiting hours</h3>
+        <div class="hours-row"><span>TUE</span><span>11 AM – 1 PM</span></div>
+        <div class="hours-row"><span>FRI</span><span>12 PM – 2 PM</span></div>
+        <a class="hours-cta" href="#schedule" data-i18n="info.hours.cta">Schedule a visit</a>
+        <div class="hours-addr">Los Robles Magnet Academy · East Palo Alto</div>
+      </div>
+    </div>
+  </section>
+
+  <main>
+
+    <section id="updates" class="updates">
+      <div class="section-head">
+        <span class="mono" data-i18n="updates.eyebrow">002 · Updates</span>
+        <h2 data-i18n="updates.h2">Field notes</h2>
+      </div>
+      <div id="updates-list" class="updates-list">
+        <div class="updates-loading" data-i18n="updates.loading">Loading recent updates…</div>
+      </div>
     </section>
 
     <section id="schedule" class="schedule">
@@ -651,19 +781,9 @@
       <div id="bibi-inline"></div>
     </section>
 
-    <section id="updates" class="updates">
-      <div class="section-head">
-        <span class="mono" data-i18n="updates.eyebrow">004 · Updates</span>
-        <h2 data-i18n="updates.h2">Field notes</h2>
-      </div>
-      <div id="updates-list" class="updates-list">
-        <div class="updates-loading" data-i18n="updates.loading">Loading recent updates…</div>
-      </div>
-    </section>
-
     <section id="tools" class="tools">
       <div class="section-head">
-        <span class="mono" data-i18n="tools.eyebrow">005 · Tools</span>
+        <span class="mono" data-i18n="tools.eyebrow">004 · Tools</span>
         <h2 data-i18n="tools.h2">Built for the work</h2>
       </div>
 
@@ -830,13 +950,15 @@ function applySky(s) {
 function renderStars() {
   const wrap = document.getElementById('sky-stars');
   if (!wrap || wrap.children.length) return;
+  // Spread across the upper half of the now much-taller hero. Anything
+  // that falls behind the illustration is simply occluded by it, the
+  // same way real stars disappear behind a treeline.
   const positions = [
-    { x: 15, y: 28, d: 0.0 },
-    { x: 32, y: 14, d: 1.4 },
-    { x: 48, y: 35, d: 2.6 },
-    { x: 64, y: 20, d: 0.8 },
-    { x: 78, y: 42, d: 3.2 },
-    { x: 88, y: 18, d: 1.9 },
+    { x: 8,  y: 12, d: 0.0 }, { x: 18, y: 28, d: 1.1 }, { x: 27, y: 8,  d: 2.3 },
+    { x: 36, y: 34, d: 0.6 }, { x: 46, y: 16, d: 1.8 }, { x: 55, y: 30, d: 3.1 },
+    { x: 63, y: 10, d: 0.9 }, { x: 71, y: 40, d: 2.6 }, { x: 80, y: 20, d: 1.4 },
+    { x: 88, y: 36, d: 3.4 }, { x: 93, y: 14, d: 0.4 }, { x: 12, y: 46, d: 2.0 },
+    { x: 60, y: 50, d: 1.6 }, { x: 40, y: 52, d: 2.9 },
   ];
   for (const p of positions) {
     const s = document.createElement('div');
@@ -848,12 +970,43 @@ function renderStars() {
   }
 }
 
+/* Sun / moon — drifts along a shallow arc keyed to the same hour value
+   that drives the gradient, and cross-fades using the same star
+   opacity, so all three pieces of the sky always agree with the clock. */
+function computeCelPosition(hour) {
+  const dayStart = 6, dayEnd = 19;
+  const isDay = hour >= dayStart && hour < dayEnd;
+  let frac;
+  if (isDay) {
+    frac = (hour - dayStart) / (dayEnd - dayStart);
+  } else {
+    const nh = hour < dayStart ? hour + 24 : hour;
+    frac = (nh - dayEnd) / (24 - (dayEnd - dayStart));
+  }
+  frac = Math.max(0, Math.min(1, frac));
+  return {
+    x: 8 + frac * 84,                          // left 8% → right 92%
+    y: 74 - Math.sin(frac * Math.PI) * 56,     // low at the edges, high at the midpoint
+  };
+}
+function applyCel(hour, starOpacity) {
+  const pos = computeCelPosition(hour);
+  const sun = document.getElementById('cel-sun');
+  const moon = document.getElementById('cel-moon');
+  if (sun)  { sun.style.left  = pos.x + '%'; sun.style.top  = pos.y + '%'; }
+  if (moon) { moon.style.left = pos.x + '%'; moon.style.top = pos.y + '%'; }
+  document.documentElement.style.setProperty('--cel-sun-opacity',  String(Math.max(0, 1 - starOpacity)));
+  document.documentElement.style.setProperty('--cel-moon-opacity', String(starOpacity));
+}
+
 let _skyInterval = null;
 function startSkyUpdates() {
   const tick = () => {
     const now = new Date();
     const hour = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
-    applySky(computeSky(hour));
+    const s = computeSky(hour);
+    applySky(s);
+    applyCel(hour, s.starOpacity);
     applyEffectiveTheme();
   };
   tick();
@@ -930,8 +1083,7 @@ const I18N = {
     'meta.title': 'libraryscience.ai — learning library science from inside an elementary school',
     'meta.description': "A record of one volunteer's experience contributing to and learning from a primary-school library — field notes, observations, and the small tools built along the way.",
 
-    'nav.about': 'About',
-    'nav.updates': 'Updates',
+    'nav.updates': 'Field notes',
     'nav.tools': 'Tools',
     'theme.auto':  'Auto',
     'theme.light': 'Light',
@@ -942,23 +1094,26 @@ const I18N = {
     'hero.eyebrow': 'est. 2026 · east palo alto, ca',
     'hero.h1': 'Learning library science from the inside of an elementary school — and seeing what AI can lend to the work.',
     'hero.p': "A record of one volunteer's experience contributing to and learning from a primary-school library. Field notes, observations, and the small tools built along the way.",
+    'hero.cta': 'Schedule a volunteer visit',
 
-    'about.eyebrow': '002 · About',
+    'info.hours.title': 'Summer volunteer visiting hours',
+    'info.hours.cta': 'Schedule a visit',
+
     'about.h2': 'An experiment in two parts',
     'about.p1': "This site documents what it's like to learn library science as it's practiced in a primary-school educational setting — and to experiment, in parallel, with how AI tools can support the healthy execution of that work.",
     'about.p2': 'The Updates section carries unfiltered field notes from the experience. The Tools section indexes the small utilities built along the way to make library work go a little smoother for the people doing it.',
 
-    'schedule.eyebrow': '003 · Schedule',
-    'schedule.h2': 'Schedule a visit',
-
-    'updates.eyebrow': '004 · Updates',
+    'updates.eyebrow': '002 · Updates',
     'updates.h2': 'Field notes',
     'updates.loading': 'Loading recent updates…',
     'updates.empty': 'No field notes yet — the first one is coming soon.',
     'updates.error.title': "Couldn't load recent updates.",
     'updates.error.suffix': 'try refreshing in a minute',
 
-    'tools.eyebrow': '005 · Tools',
+    'schedule.eyebrow': '003 · Schedule',
+    'schedule.h2': 'Schedule a visit',
+
+    'tools.eyebrow': '004 · Tools',
     'tools.h2': 'Built for the work',
     'tools.marc.title': 'MARC File Creator',
     'tools.marc.desc': 'Scan an ISBN and a local barcode; the app pulls bibliographic data from Open Library and Google Books and writes a Destiny-ready MARC 21 record. Outputs a .mrc file ready to import.',
@@ -990,8 +1145,7 @@ const I18N = {
     'meta.title': 'libraryscience.ai — aprendiendo bibliotecología desde dentro de una escuela primaria',
     'meta.description': 'El registro de la experiencia de un voluntario que contribuye y aprende en la biblioteca de una escuela primaria — apuntes de campo, observaciones y las pequeñas herramientas construidas en el camino.',
 
-    'nav.about': 'Acerca de',
-    'nav.updates': 'Actualizaciones',
+    'nav.updates': 'Apuntes de campo',
     'nav.tools': 'Herramientas',
     'theme.auto':  'Auto',
     'theme.light': 'Claro',
@@ -1002,23 +1156,26 @@ const I18N = {
     'hero.eyebrow': 'desde 2026 · east palo alto, ca',
     'hero.h1': 'Aprendiendo bibliotecología desde dentro de una escuela primaria — y viendo qué puede aportar la IA al trabajo.',
     'hero.p': 'Un registro de la experiencia de un voluntario que contribuye y aprende en la biblioteca de una escuela primaria. Apuntes de campo, observaciones y las pequeñas herramientas construidas en el camino.',
+    'hero.cta': 'Programa una visita de voluntariado',
 
-    'about.eyebrow': '002 · Acerca de',
+    'info.hours.title': 'Horario de voluntariado de verano',
+    'info.hours.cta': 'Programa una visita',
+
     'about.h2': 'Un experimento en dos partes',
     'about.p1': 'Este sitio documenta cómo es aprender bibliotecología tal como se practica en una escuela primaria — y experimentar, en paralelo, con cómo las herramientas de IA pueden apoyar la práctica saludable de ese trabajo.',
     'about.p2': 'La sección de Actualizaciones reúne los apuntes de campo sin filtrar de la experiencia. La sección de Herramientas indexa las pequeñas utilidades construidas en el camino para que el trabajo bibliotecario sea un poco más fluido para quienes lo hacen.',
 
-    'schedule.eyebrow': '003 · Visita',
-    'schedule.h2': 'Programa una visita',
-
-    'updates.eyebrow': '004 · Actualizaciones',
+    'updates.eyebrow': '002 · Actualizaciones',
     'updates.h2': 'Apuntes de campo',
     'updates.loading': 'Cargando actualizaciones recientes…',
     'updates.empty': 'Todavía no hay apuntes — el primero llega pronto.',
     'updates.error.title': 'No se pudieron cargar las actualizaciones recientes.',
     'updates.error.suffix': 'intenta refrescar en un minuto',
 
-    'tools.eyebrow': '005 · Herramientas',
+    'schedule.eyebrow': '003 · Visita',
+    'schedule.h2': 'Programa una visita',
+
+    'tools.eyebrow': '004 · Herramientas',
     'tools.h2': 'Hechas para el trabajo',
     'tools.marc.title': 'Creador de archivos MARC',
     'tools.marc.desc': 'Escanea un ISBN y un código de barras local; la aplicación obtiene datos bibliográficos de Open Library y Google Books y genera un registro MARC 21 listo para Destiny. Produce un archivo .mrc listo para importar.',
